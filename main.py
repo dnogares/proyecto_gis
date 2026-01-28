@@ -43,15 +43,21 @@ app.add_middleware(
 )
 
 # Configuración PostGIS
-POSTGIS_CONFIG = {
-    "host": "192.168.1.138",
-    "database": "GIS",
-    "user": "manuel",
-    "password": "Aa123456",
-    "port": 5432,
-    "client_encoding": "utf8",      # ← Encoding del cliente
-    "options": "-c client_encoding=UTF8"  # ← Opciones de conexión
+# Configuración de PostGIS
+# Usar variables de entorno en producción
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+POSTGIS_CONFIG = {
+    "host": os.getenv("POSTGIS_HOST", "192.168.1.138"),
+    "database": os.getenv("POSTGIS_DATABASE", "GIS"),
+    "user": os.getenv("POSTGIS_USER", "manuel"),
+    "password": os.getenv("POSTGIS_PASSWORD", "Aa123456"),
+    "port": int(os.getenv("POSTGIS_PORT", "5432")),
+    "client_encoding": "utf8",
+    "options": "-c client_encoding=UTF8"
 }
 
 # Inicializar Data Manager
