@@ -1,0 +1,80 @@
+# ============================================================================
+# DEPENDENCIAS PARA GIS API v2.0 - FlatGeobuf + PostGIS + Catastro
+# ============================================================================
+
+# FastAPI y servidor
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Geoespacial - CORE
+geopandas==0.14.2
+pyogrio==0.7.2  # Motor I/O rápido para FlatGeobuf (reemplazo de fiona)
+shapely==2.0.2
+pyproj==3.6.1
+
+# PostGIS
+psycopg2-binary==2.9.9  # Conector PostgreSQL
+sqlalchemy==2.0.25
+geoalchemy2==0.14.3
+
+# Formatos adicionales
+fiona==1.9.5  # Backup si pyogrio falla
+rtree==1.1.0  # Índices espaciales
+
+# Utilidades
+pandas==2.1.4
+numpy==1.26.3
+
+# Catastro - Descarga y procesamiento
+requests==2.31.0
+requests-cache==1.1.1  # Cache HTTP para Catastro
+Pillow==10.2.0  # Procesamiento de imágenes (composiciones, contornos)
+reportlab==4.0.8  # Generación de PDFs
+
+# Logging y monitoreo
+python-dotenv==1.0.0
+
+# Testing (opcional)
+pytest==7.4.4
+pytest-asyncio==0.23.3
+
+# Documentación
+# sphinx==7.2.6
+# sphinx-rtd-theme==2.0.0
+
+
+# ============================================================================
+# NOTAS DE INSTALACIÓN
+# ============================================================================
+
+# 1. Instalar GDAL (requerido por pyogrio)
+# -------------------------------------------
+# Ubuntu/Debian:
+#   sudo apt-get update
+#   sudo apt-get install -y gdal-bin libgdal-dev python3-gdal
+#
+# macOS:
+#   brew install gdal
+#
+# Windows:
+#   Descargar OSGeo4W: https://trac.osgeo.org/osgeo4w/
+
+# 2. Instalar PostGIS (opcional pero recomendado)
+# ------------------------------------------------
+# Ubuntu/Debian:
+#   sudo apt-get install -y postgresql postgresql-contrib postgis
+#
+# macOS:
+#   brew install postgresql postgis
+#
+# Verificar:
+#   psql -U postgres -c "CREATE EXTENSION postgis;"
+
+# 3. Instalar dependencias Python
+# --------------------------------
+#   pip install -r requirements.txt
+
+# 4. Verificar instalación
+# -------------------------
+#   python -c "import geopandas; import pyogrio; print('✅ OK')"

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descarga Catastral - GIS Tool</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #2196F3;
+        }
+        
+        .tab.active {
+            color: #2196F3;
+            border-bottom-color: #2196F3;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: monospace;
+        }
+        
+        .checkbox-group {
+            margin: 15px 0;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        
+        button {
+            padding: 14px 28px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #1976D2;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #2196F3;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .resultados {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .resultado-item {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .resultado-item h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .resultado-item p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .archivos-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .archivo-item {
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .archivo-item a {
+            text-decoration: none;
+            color: #2196F3;
+            font-size: 13px;
+        }
+        
+        .archivo-item a:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: #E3F2FD;
+            border: 1px solid #2196F3;
+            color: #1565C0;
+        }
+        
+        .alert-success {
+            background: #E8F5E9;
+            border: 1px solid #4CAF50;
+            color: #2E7D32;
+        }
+        
+        .alert-error {
+            background: #FFEBEE;
+            border: 1px solid #F44336;
+            color: #C62828;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .download-btn:hover {
+            background: #45a049;
+        }
+        
+        .info-box {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+            margin-bottom: 20px;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+            color: #1565C0;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+        }
+        
+        .info-box li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Descarga de Documentación Catastral</h1>
+        <p class="subtitle">Sistema completo de descarga y procesamiento de datos del Catastro</p>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="individual">Referencia Individual</button>
+            <button class="tab" data-tab="lote">Lote de Referencias</button>
+            <button class="tab" data-tab="info">Información</button>
+        </div>
+        
+        <!-- TAB: Individual -->
+        <div class="tab-content active" id="tab-individual">
+            <div class="input-group">
+                <label for="referencia">Referencia Catastral</label>
+                <input type="text" id="referencia" placeholder="Ejemplo: 1234567AB12345C" maxlength="20">
+                <small style="color: #666;">Formato: 7 dígitos + 2 letras + 5 dígitos + 1 letra</small>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="afecciones" checked>
+                    Descargar capas de afecciones (planeamiento, protecciones)
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="crear_zip" checked>
+                    Crear archivo ZIP con toda la documentación
+                </label>
+            </div>
+            
+            <button id="btn-descargar">📥 Descargar Documentación</button>
+        </div>
+        
+        <!-- TAB: Lote -->
+        <div class="tab-content" id="tab-lote">
+            <div class="input-group">
+                <label for="referencias-lote">Lista de Referencias Catastrales</label>
+                <textarea id="referencias-lote" placeholder="Una referencia por línea:
+1234567AB12345C
+2345678CD23456D
+3456789EF34567E"></textarea>
+                <small style="color: #666;">Una referencia catastral por línea</small>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="afecciones-lote" checked>
+                    Descargar capas de afecciones
+                </label>
+            </div>
+            
+            <button id="btn-descargar-lote">📦 Descargar Lote</button>
+        </div>
+        
+        <!-- TAB: Información -->
+        <div class="tab-content" id="tab-info">
+            <div class="info-box">
+                <h3>📋 Documentación Generada</h3>
+                <ul>
+                    <li><strong>GML Parcela y Edificio:</strong> Geometrías oficiales del Catastro</li>
+                    <li><strong>Datos Alfanuméricos (XML):</strong> Superficies, usos, año construcción</li>
+                    <li><strong>Plano Catastral:</strong> Imagen del plano oficial</li>
+                    <li><strong>Ortofoto PNOA:</strong> Imagen aérea de alta resolución</li>
+                    <li><strong>Composición Plano + Ortofoto:</strong> Mezcla visual con contorno dibujado en rojo</li>
+                    <li><strong>PDF Oficial:</strong> Consulta descriptiva del Catastro</li>
+                    <li><strong>Archivo KML:</strong> Para visualizar en Google Earth</li>
+                    <li><strong>Capas de Afecciones:</strong> Planeamiento urbanístico y protecciones</li>
+                    <li><strong>Ortofotos de Contexto:</strong> Provincial, autonómico y nacional con contorno marcado</li>
+                    <li><strong>Informe PDF Completo:</strong> Documento con todas las imágenes y datos</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h3>⚡ Características</h3>
+                <ul>
+                    <li><strong>Cache HTTP:</strong> Respuestas cacheadas por 1 hora para mayor velocidad</li>
+                    <li><strong>Procesamiento Paralelo:</strong> Hasta 3 referencias simultáneas en lote</li>
+                    <li><strong>Contornos Automáticos:</strong> Dibuja el perímetro de la parcela en rojo</li>
+                    <li><strong>Múltiples Formatos:</strong> GML, KML, PDF, PNG, JPG</li>
+                    <li><strong>Resumen CSV:</strong> En lotes, genera Excel con coordenadas y superficies</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loading-text">Procesando...</p>
+        </div>
+        
+        <!-- Resultados -->
+        <div class="resultados" id="resultados"></div>
+    </div>
+    
+    <script>
+        // Gestión de tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Desactivar todos
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Activar seleccionado
+                tab.classList.add('active');
+                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+        
+        // Descargar individual
+        document.getElementById('btn-descargar').addEventListener('click', async () => {
+            const referencia = document.getElementById('referencia').value.trim();
+            const afecciones = document.getElementById('afecciones').checked;
+            const crear_zip = document.getElementById('crear_zip').checked;
+            
+            if (!referencia) {
+                alert('Por favor, introduce una referencia catastral');
+                return;
+            }
+            
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultados').style.display = 'none';
+            document.getElementById('loading-text').textContent = 'Descargando documentación...';
+            
+            try {
+                const response = await fetch('/api/v1/catastro/descargar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        referencia: referencia,
+                        descargar_afecciones: afecciones,
+                        crear_zip: crear_zip
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                mostrarResultados(data, 'individual');
+                
+            } catch (error) {
+                mostrarError(`Error al descargar: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        // Descargar lote
+        document.getElementById('btn-descargar-lote').addEventListener('click', async () => {
+            const texto = document.getElementById('referencias-lote').value.trim();
+            const afecciones = document.getElementById('afecciones-lote').checked;
+            
+            if (!texto) {
+                alert('Por favor, introduce al menos una referencia');
+                return;
+            }
+            
+            const referencias = texto.split('\n')
+                .map(r => r.trim())
+                .filter(r => r.length > 0);
+            
+            if (referencias.length === 0) {
+                alert('No se encontraron referencias válidas');
+                return;
+            }
+            
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultados').style.display = 'none';
+            document.getElementById('loading-text').textContent = 
+                `Procesando ${referencias.length} referencias...`;
+            
+            try {
+                const response = await fetch('/api/v1/catastro/descargar-lote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        referencias: referencias,
+                        descargar_afecciones: afecciones
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                mostrarResultados(data, 'lote');
+                
+            } catch (error) {
+                mostrarError(`Error al procesar lote: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        function mostrarResultados(data, tipo) {
+            const resultados = document.getElementById('resultados');
+            resultados.style.display = 'block';
+            
+            let html = '';
+            
+            if (tipo === 'individual') {
+                if (data.exitosa) {
+                    html += '<div class="alert alert-success">✅ Descarga completada correctamente</div>';
+                    
+                    html += '<div class="resultado-item">';
+                    html += `<h3>📄 Referencia: ${data.referencia}</h3>`;
+                    
+                    if (data.coordenadas) {
+                        html += `<p><strong>Coordenadas:</strong> ${data.coordenadas.lat.toFixed(6)}°, ${data.coordenadas.lon.toFixed(6)}°</p>`;
+                    }
+                    
+                    if (data.zip_path) {
+                        const zipName = data.zip_path.split('/').pop();
+                        html += `<a href="/descargas/${zipName}" class="download-btn" download>📦 Descargar ZIP Completo</a>`;
+                    }
+                    
+                    html += '</div>';
+                } else {
+                    html += '<div class="alert alert-error">❌ Error en la descarga</div>';
+                }
+            } else if (tipo === 'lote') {
+                if (data.exitosa) {
+                    html += '<div class="alert alert-success">✅ Lote procesado correctamente</div>';
+                    
+                    html += '<div class="resultado-item">';
+                    html += `<h3>📦 Lote de ${data.total_referencias} referencias</h3>`;
+                    html += `<p><strong>Tamaño ZIP:</strong> ${data.zip_size_mb} MB</p>`;
+                    
+                    if (data.zip_path) {
+                        const zipName = data.zip_path.split('/').pop();
+                        html += `<a href="/descargas/${zipName}" class="download-btn" download>📦 Descargar ZIP de Lote</a>`;
+                    }
+                    
+                    html += '</div>';
+                } else {
+                    html += '<div class="alert alert-error">❌ Error procesando lote</div>';
+                }
+            }
+            
+            resultados.innerHTML = html;
+        }
+        
+        function mostrarError(mensaje) {
+            const resultados = document.getElementById('resultados');
+            resultados.style.display = 'block';
+            resultados.innerHTML = `<div class="alert alert-error">${mensaje}</div>`;
+        }
+    </script>
+</body>
+</html>
