@@ -90,9 +90,15 @@ except Exception as e:
     catastro_service = None
 
 
-# ============================================================================
+93
+=======================================================================
 # ENDPOINTS PARA FLATGEOBUF
 # ============================================================================
+
+# Health Check Endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 @app.get("/api/v1/capas/fgb")
 async def listar_capas_fgb():
