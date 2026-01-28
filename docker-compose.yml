@@ -7,7 +7,7 @@ services:
       - "8000:8000"
     environment:
       # PostgreSQL/PostGIS
-      - POSTGIS_HOST=${POSTGIS_HOST:-localhost}
+      - POSTGIS_HOST=${POSTGIS_HOST}
       - POSTGIS_DATABASE=${POSTGIS_DATABASE:-GIS}
       - POSTGIS_USER=${POSTGIS_USER:-manuel}
       - POSTGIS_PASSWORD=${POSTGIS_PASSWORD:-Aa123456}
@@ -16,12 +16,12 @@ services:
       # Configuración de la aplicación
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - WORKERS=${WORKERS:-4}
       
     volumes:
-      # Persistir capas
-      - ./capas:/app/capas
-      # Persistir descargas
-      - ./descargas_catastro:/app/descargas_catastro
+      # Persistir capas usando volúmenes nombrados para mejor compatibilidad con Easypanel
+      - gis_capas:/app/capas
+      - gis_descargas:/app/descargas_catastro
       
     restart: unless-stopped
     
@@ -32,18 +32,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # PostgreSQL/PostGIS (opcional - descomenta si necesitas BD local)
-  # postgis:
-  #   image: postgis/postgis:15-3.4
-  #   environment:
-  #     - POSTGRES_DB=GIS
-  #     - POSTGRES_USER=manuel
-  #     - POSTGRES_PASSWORD=Aa123456
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgis_data:/var/lib/postgresql/data
-  #   restart: unless-stopped
-
-# volumes:
-#   postgis_data:
+volumes:
+  gis_capas:
+  gis_descargas:

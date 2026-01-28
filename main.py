@@ -802,6 +802,14 @@ async def descargar_lote_catastro(lote_id: str):
 
 
 
+# Servir archivos estáticos
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/capas", StaticFiles(directory="capas"), name="capas")
+
+@app.get("/")
+async def read_index():
+    return FileResponse('templates/index.html')
+
 @app.on_event("startup")
 async def startup_event():
     """Inicialización al arrancar"""
