@@ -51,7 +51,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POSTGIS_CONFIG = {
-    "host": os.getenv("POSTGIS_HOST", "192.168.1.138"),
+    "host": os.getenv("POSTGIS_HOST", "postgis"),
     "database": os.getenv("POSTGIS_DATABASE", "GIS"),
     "user": os.getenv("POSTGIS_USER", "manuel"),
     "password": os.getenv("POSTGIS_PASSWORD", "Aa123456"),
@@ -835,12 +835,58 @@ async def shutdown_event():
 
 
 if __name__ == "__main__":
-    import uvicorn
+    import os
+    import sys
+    import logging
+    import multiprocessing
+    import subprocess
+
+    # Configurables vía entorno
+    HOST = os.getenv("HOST", "0.0.0.0")
+    PORT = int(os.getenv("PORT", "8000"))
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
     
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=80,
-        reload=True,
-        log_level="info"
-    )
+    # Determinar número de workers
+    MAX_WORKERS = 4
+    WORKERS = int(os.getenv("WORKERS", str(min(MAX_WORKERS, max(2, multiprocessing.cpu_count() or 2)))))
+    
+    # Detectar si estamos en modo desarrollo
+    DEV_MODE = os.getenv("DEV_MODE", "false").lower() in ("1", "true", "yes")
+    
+    try:
+        if DEV_MODE:
+            # Modo desarrollo: usar uvicorn con reload
+            logger.info("🔧 Modo DESARROLLO: usando uvicorn con reload")
+            import uvicorn
+            uvicorn.run(
+                "main:app",
+                host=HOST,
+                port=PORT,
+                reload=True,
+                log_level=LOG_LEVEL
+            )
+        else:
+            # Modo producción: usar Gunicorn + Uvicorn workers
+            logger.info(f"🚀 Modo PRODUCCIÓN: usando Gunicorn con {WORKERS} workers en {HOST}:{PORT}")
+            
+            cmd = [
+                "gunicorn",
+                "-k", "uvicorn.workers.UvicornWorker",
+                "-w", str(WORKERS),
+                "-b", f"{HOST}:{PORT}",
+                "--timeout", "120",
+                "--graceful-timeout", "30",
+                "--log-level", LOG_LEVEL,
+                "--access-logfile", "-",  # Logs a stdout
+                "--error-logfile", "-",   # Logs a stderr
+                "main:app"
+            ]
+            
+            logger.info(f"Ejecutando: {' '.join(cmd)}")
+            
+            # Ejecutar Gunicorn (reemplaza el proceso actual)
+            os.execvp("gunicorn", cmd)
+    
+    except Exception as e:
+        logging.exception(f"❌ Error arrancando el servidor: {e}")
+        sys.exit(1)

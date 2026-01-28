@@ -6,7 +6,9 @@
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
-
+gunicorn
+#python-multipart
+python-dotenv
 # Geoespacial - CORE
 geopandas==0.14.2
 pyogrio==0.7.2  # Motor I/O rápido para FlatGeobuf (reemplazo de fiona)
