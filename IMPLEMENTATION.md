@@ -263,7 +263,7 @@ python main.py
 ### 4. Abrir Navegador
 
 ```
-http://localhost:8000
+http://localhost
 ```
 
 ---
@@ -317,8 +317,8 @@ CAPAS_EXPORTAR = [
 python scripts/verify_system.py
 
 # Probar API
-curl http://localhost:8000/health
-curl http://localhost:8000/api/v1/capas/fgb
+curl http://localhost/health
+curl http://localhost/api/v1/capas/fgb
 
 # Probar carga FGB
 python -c "
@@ -414,7 +414,7 @@ El sistema está **100% funcional** y listo para:
 
 - **Documentación:** Ver README.md y QUICKSTART.md
 - **Verificación:** `python scripts/verify_system.py`
-- **API Docs:** http://localhost:8000/docs
+- **API Docs:** http://localhost/docs
 - **Issues:** GitHub issues
 
 ---

@@ -160,10 +160,10 @@ window.gisViewer.toggleLayer('rednatura', true)
 ls -lh capas/fgb/*.fgb
 
 # Verificar API responde:
-curl http://localhost:8000/api/v1/capas/fgb
+curl http://localhost/api/v1/capas/fgb
 
 # Si no hay FGB, usar fallback:
-curl -X POST http://localhost:8000/api/v1/analisis/obtener-capa \
+curl -X POST http://localhost/api/v1/analisis/obtener-capa \
   -H "Content-Type: application/json" \
   -d '{"nombre_capa": "rednatura"}'
 ```

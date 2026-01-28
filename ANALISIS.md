@@ -18,7 +18,7 @@ El sistema de análisis de afecciones permite evaluar el impacto ambiental y urb
 
 1. **Abrir interfaz de análisis:**
    ```
-   http://localhost:8000/analisis.html
+   http://localhost/analisis.html
    ```
 
 2. **Dibujar parcela en el mapa:**
@@ -38,7 +38,7 @@ El sistema de análisis de afecciones permite evaluar el impacto ambiental y urb
 
 ```bash
 # Analizar afecciones de una parcela
-curl -X POST http://localhost:8000/api/v1/analisis/afecciones \
+curl -X POST http://localhost/api/v1/analisis/afecciones \
   -H "Content-Type: application/json" \
   -d '{
     "geometria_wkt": "POLYGON((-2.45 36.84, -2.44 36.84, -2.44 36.83, -2.45 36.83, -2.45 36.84))",
@@ -203,7 +203,7 @@ geometria = "POLYGON((-2.45 36.84, -2.44 36.84, -2.44 36.83, -2.45 36.83, -2.45 
 
 # Analizar afecciones
 response = requests.post(
-    'http://localhost:8000/api/v1/analisis/afecciones',
+    'http://localhost/api/v1/analisis/afecciones',
     json={
         'geometria_wkt': geometria,
         'referencia_catastral': '1234567AB1234D'
@@ -346,7 +346,7 @@ python main.py
 ls -lh capas/fgb/
 
 # Verificar PostGIS
-curl http://localhost:8000/health
+curl http://localhost/health
 ```
 
 ### Resultados vacíos
@@ -365,7 +365,7 @@ curl http://localhost:8000/health
 **Solución:**
 ```bash
 # Validar geometría
-curl -X POST http://localhost:8000/api/v1/geometria/validar \
+curl -X POST http://localhost/api/v1/geometria/validar \
   -H "Content-Type: application/json" \
   -d '{"geometria_wkt": "POLYGON((...)))"}'
 ```
@@ -457,8 +457,8 @@ Este sistema proporciona **análisis técnico automatizado** basado en datos geo
 
 ## 📞 Soporte
 
-- **Documentación API:** http://localhost:8000/docs
-- **Health Check:** http://localhost:8000/health
+- **Documentación API:** http://localhost/docs
+- **Health Check:** http://localhost/health
 - **Logs:** Ver consola del servidor
 
 ---

@@ -34,11 +34,11 @@ RUN mkdir -p capas/fgb capas/gpkg capas/shp descargas_catastro temp_catastro && 
     chmod +x start.sh
 
 # Exponer puerto
-EXPOSE 8000
+EXPOSE 80
 
 # Health check usando curl (más fiable en Docker)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost/health || exit 1
 
 # Usar script de inicio
 CMD ["./start.sh"]

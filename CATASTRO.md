@@ -29,7 +29,7 @@ Sistema completo e integrado de descarga y procesamiento de documentación catas
 ### Interfaz Web
 
 ```
-http://localhost:8000/catastro.html
+http://localhost/catastro.html
 ```
 
 #### Referencia Individual:
@@ -52,7 +52,7 @@ http://localhost:8000/catastro.html
 **POST** `/api/v1/catastro/descargar`
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/catastro/descargar \
+curl -X POST http://localhost/api/v1/catastro/descargar \
   -H "Content-Type: application/json" \
   -d '{
     "referencia": "30037A008002060000UZ",
@@ -97,7 +97,7 @@ curl -X POST http://localhost:8000/api/v1/catastro/descargar \
 **POST** `/api/v1/catastro/descargar-lote`
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/catastro/descargar-lote \
+curl -X POST http://localhost/api/v1/catastro/descargar-lote \
   -H "Content-Type: application/json" \
   -d '{
     "referencias": [
@@ -125,7 +125,7 @@ curl -X POST http://localhost:8000/api/v1/catastro/descargar-lote \
 **GET** `/api/v1/catastro/coordenadas/{referencia}`
 
 ```bash
-curl http://localhost:8000/api/v1/catastro/coordenadas/30037A008002060000UZ
+curl http://localhost/api/v1/catastro/coordenadas/30037A008002060000UZ
 ```
 
 **Response:**
@@ -152,7 +152,7 @@ curl http://localhost:8000/api/v1/catastro/coordenadas/30037A008002060000UZ
 **GET** `/api/v1/catastro/gml/{referencia}`
 
 ```bash
-curl http://localhost:8000/api/v1/catastro/gml/30037A008002060000UZ \
+curl http://localhost/api/v1/catastro/gml/30037A008002060000UZ \
   -o parcela.gml
 ```
 
@@ -161,7 +161,7 @@ curl http://localhost:8000/api/v1/catastro/gml/30037A008002060000UZ \
 **GET** `/api/v1/catastro/pdf/{referencia}`
 
 ```bash
-curl http://localhost:8000/api/v1/catastro/pdf/30037A008002060000UZ \
+curl http://localhost/api/v1/catastro/pdf/30037A008002060000UZ \
   -o catastro.pdf
 ```
 
@@ -170,7 +170,7 @@ curl http://localhost:8000/api/v1/catastro/pdf/30037A008002060000UZ \
 **GET** `/api/v1/catastro/validar/{referencia}`
 
 ```bash
-curl http://localhost:8000/api/v1/catastro/validar/30037A008002060000UZ
+curl http://localhost/api/v1/catastro/validar/30037A008002060000UZ
 ```
 
 **Response:**
@@ -384,7 +384,7 @@ import requests
 
 # Descargar documentación completa
 response = requests.post(
-    'http://localhost:8000/api/v1/catastro/descargar',
+    'http://localhost/api/v1/catastro/descargar',
     json={
         'referencia': '30037A008002060000UZ',
         'descargar_afecciones': True,
@@ -399,7 +399,7 @@ if resultado['exitosa']:
     print(f"ZIP: {resultado['zip_path']}")
     
     # Acceder al ZIP
-    zip_url = f"http://localhost:8000/descargas/{resultado['zip_path'].split('/')[-1]}"
+    zip_url = f"http://localhost/descargas/{resultado['zip_path'].split('/')[-1]}"
     print(f"Descargar: {zip_url}")
 ```
 
@@ -455,8 +455,8 @@ Obtener ortofotos de contexto para visualización de ubicación.
 
 ## 📞 Soporte
 
-- **Documentación API:** http://localhost:8000/docs
-- **Health Check:** http://localhost:8000/health
+- **Documentación API:** http://localhost/docs
+- **Health Check:** http://localhost/health
 - **Logs:** Ver consola del servidor
 
 ---

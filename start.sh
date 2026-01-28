@@ -37,7 +37,7 @@ echo ""
 echo "========================================"
 echo "🌍 Configuración del Servidor"
 echo "========================================"
-echo "Puerto: 8000"
+echo "Puerto: 80"
 echo "Workers: ${WORKERS:-4}"
 echo "PostGIS Host: ${POSTGIS_HOST:-localhost}"
 echo "Debug: ${DEBUG:-false}"
@@ -49,7 +49,7 @@ echo "🚀 Iniciando Uvicorn..."
 
 exec uvicorn main:app \
     --host 0.0.0.0 \
-    --port 8000 \
+    --port 80 \
     --workers ${WORKERS:-4} \
     --log-level ${LOG_LEVEL:-info} \
     --no-access-log \

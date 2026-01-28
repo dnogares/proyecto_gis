@@ -156,7 +156,7 @@ python main.py
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-Abrir navegador en: http://localhost:8000
+Abrir navegador en: http://localhost
 
 ## 📁 Estructura del proyecto
 
@@ -342,7 +342,7 @@ psql -h localhost -U manuel -d GIS -c "SELECT PostGIS_version();"
 
 2. Verificar que el servidor soporta HTTP Range:
    ```bash
-   curl -I http://localhost:8000/capas/fgb/rednatura.fgb | grep Accept-Ranges
+   curl -I http://localhost/capas/fgb/rednatura.fgb | grep Accept-Ranges
    # Debe mostrar: Accept-Ranges: bytes
    ```
 

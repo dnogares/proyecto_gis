@@ -12,13 +12,13 @@ Se ha integrado exitosamente el **servicio completo de Catastro** (`catastro_ser
 - ✅ Viewer web con FlatGeobuf (20x más rápido)
 - ✅ Streaming HTTP Range
 - ✅ PostGIS para análisis backend
-- ✅ Interfaz: `http://localhost:8000/`
+- ✅ Interfaz: `http://localhost/`
 
 ### 2. **Análisis de Afecciones Ambientales**
 - ✅ Motor de análisis de afecciones
 - ✅ Cálculo de intersecciones espaciales
 - ✅ Generación de informes
-- ✅ Interfaz: `http://localhost:8000/analisis.html`
+- ✅ Interfaz: `http://localhost/analisis.html`
 
 ### 3. **Catastro Completo (NUEVA INTEGRACIÓN)**
 - ✅ Validación de referencias catastrales
@@ -30,7 +30,7 @@ Se ha integrado exitosamente el **servicio completo de Catastro** (`catastro_ser
 - ✅ Generación de PDFs
 - ✅ Procesamiento por lotes
 - ✅ Análisis de distancias
-- ✅ Interfaz: `http://localhost:8000/catastro.html`
+- ✅ Interfaz: `http://localhost/catastro.html`
 
 ---
 
@@ -47,7 +47,7 @@ python scripts/verify_system.py
 python main.py
 
 # 4. Abrir navegador
-http://localhost:8000
+http://localhost
 ```
 
 ---
@@ -55,7 +55,7 @@ http://localhost:8000
 ## 🌐 Interfaces Web Disponibles
 
 ### 1. Visor GIS Principal
-**URL:** `http://localhost:8000/`
+**URL:** `http://localhost/`
 
 Funcionalidades:
 - Visualización de capas FlatGeobuf
@@ -64,7 +64,7 @@ Funcionalidades:
 - Fallback a PostGIS/GeoJSON
 
 ### 2. Análisis de Afecciones
-**URL:** `http://localhost:8000/analisis.html`
+**URL:** `http://localhost/analisis.html`
 
 Funcionalidades:
 - Dibujar parcelas en el mapa
@@ -73,7 +73,7 @@ Funcionalidades:
 - Recomendaciones técnicas
 
 ### 3. Catastro Completo
-**URL:** `http://localhost:8000/catastro.html`
+**URL:** `http://localhost/catastro.html`
 
 Funcionalidades:
 - Validación de referencias
@@ -125,7 +125,7 @@ GET /api/v1/capas/{nombre}/fgb-info
 POST /api/v1/analisis/obtener-capa
 ```
 
-Documentación completa: `http://localhost:8000/docs`
+Documentación completa: `http://localhost/docs`
 
 ---
 
@@ -265,7 +265,7 @@ catastro_service = CatastroCompleteService(
 import requests
 
 response = requests.post(
-    'http://localhost:8000/api/v1/catastro/validar',
+    'http://localhost/api/v1/catastro/validar',
     json={'referencia': '30037A008002060000UZ'}
 )
 
@@ -278,7 +278,7 @@ print(f"Existe: {resultado['existe_catastro']}")
 
 ```python
 response = requests.get(
-    'http://localhost:8000/api/v1/catastro/datos/30037A008002060000UZ'
+    'http://localhost/api/v1/catastro/datos/30037A008002060000UZ'
 )
 
 datos = response.json()
@@ -290,7 +290,7 @@ print(f"Coordenadas: {datos['coordenadas']['lat']}, {datos['coordenadas']['lon']
 
 ```python
 response = requests.post(
-    'http://localhost:8000/api/v1/catastro/procesar-lote',
+    'http://localhost/api/v1/catastro/procesar-lote',
     json={
         'referencias': [
             '30037A008002060000UZ',
@@ -307,7 +307,7 @@ print(f"ZIP: {resultado['lote_id']}")
 
 # Descargar ZIP
 zip_response = requests.get(
-    f"http://localhost:8000/api/v1/catastro/descargar/{resultado['lote_id']}"
+    f"http://localhost/api/v1/catastro/descargar/{resultado['lote_id']}"
 )
 
 with open('lote.zip', 'wb') as f:
@@ -440,7 +440,7 @@ El sistema está **100% operativo** con:
 3. **Verificar sistema:** `python scripts/verify_system.py`
 4. **Preparar datos:** Usar scripts de conversión
 5. **Iniciar servidor:** `python main.py`
-6. **Abrir navegador:** `http://localhost:8000`
+6. **Abrir navegador:** `http://localhost`
 
 ---
 

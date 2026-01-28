@@ -93,13 +93,13 @@ INFO:     Waiting for application startup.
 INFO:     ✅ Data Manager inicializado
 INFO:     📊 Capas FlatGeobuf disponibles: 5
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Uvicorn running on http://0.0.0.0:80
 ```
 
 ### 6. Abrir navegador
 
 ```
-http://localhost:8000
+http://localhost
 ```
 
 ¡Listo! El visor debería mostrar el mapa con controles de capas.
@@ -149,7 +149,7 @@ python -c "from osgeo import gdal; print(gdal.__version__)"
 
 2. Verificar endpoint API:
    ```bash
-   curl http://localhost:8000/api/v1/capas/fgb
+   curl http://localhost/api/v1/capas/fgb
    ```
 
 3. Abrir consola del navegador (F12) y buscar errores
@@ -165,7 +165,7 @@ Verificar que el script está cargado en `templates/index.html`:
 
 1. Verificar que HTTP Range está habilitado:
    ```bash
-   curl -I http://localhost:8000/capas/fgb/tuarchivo.fgb | grep Accept-Ranges
+   curl -I http://localhost/capas/fgb/tuarchivo.fgb | grep Accept-Ranges
    # Debe mostrar: Accept-Ranges: bytes
    ```
 
@@ -243,7 +243,7 @@ pip install gunicorn
 gunicorn main:app \
     --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:8000
+    --bind 0.0.0.0:80
 ```
 
 ---
@@ -285,7 +285,7 @@ python main.py 2>&1 | grep ERROR
 ### Documentación adicional
 
 - **README.md**: Documentación completa
-- **API Docs**: http://localhost:8000/docs (Swagger UI)
+- **API Docs**: http://localhost/docs (Swagger UI)
 - **FlatGeobuf**: https://flatgeobuf.org/
 - **GeoPandas**: https://geopandas.org/
 
@@ -300,13 +300,13 @@ Para verificar que todo funciona:
 python scripts/verify_system.py
 
 # 2. API
-curl http://localhost:8000/health
+curl http://localhost/health
 
 # 3. Capas FGB
-curl http://localhost:8000/api/v1/capas/fgb
+curl http://localhost/api/v1/capas/fgb
 
 # 4. Frontend
-# Abrir http://localhost:8000 y activar una capa
+# Abrir http://localhost y activar una capa
 ```
 
 Si todos los checks pasan: **¡Estás listo! 🎉**

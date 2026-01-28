@@ -154,7 +154,7 @@ https://gis-api-xxxxx.easypanel.host
 ✅ DataSourceManager inicializado
 ✅ Analizadores inicializados
 ✅ Servicio completo de Catastro inicializado
-✅ Uvicorn running on http://0.0.0.0:8000
+✅ Uvicorn running on http://0.0.0.0:80
 ```
 
 ---
