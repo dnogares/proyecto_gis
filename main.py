@@ -839,24 +839,21 @@ if __name__ == "__main__":
     import sys
     import logging
     import multiprocessing
-    import subprocess
 
-    # Configurables vía entorno
+    # Configuración desde variables de entorno
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", "8000"))
     LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
+    DEBUG = os.getenv("DEBUG", "false").lower() in ("1", "true", "yes")
     
     # Determinar número de workers
     MAX_WORKERS = 4
     WORKERS = int(os.getenv("WORKERS", str(min(MAX_WORKERS, max(2, multiprocessing.cpu_count() or 2)))))
     
-    # Detectar si estamos en modo desarrollo
-    DEV_MODE = os.getenv("DEV_MODE", "false").lower() in ("1", "true", "yes")
-    
     try:
-        if DEV_MODE:
-            # Modo desarrollo: usar uvicorn con reload
-            logger.info("🔧 Modo DESARROLLO: usando uvicorn con reload")
+        if DEBUG:
+            # Modo desarrollo: Uvicorn con reload
+            logger.info("🔧 Modo DESARROLLO: Uvicorn con reload")
             import uvicorn
             uvicorn.run(
                 "main:app",
@@ -866,27 +863,89 @@ if __name__ == "__main__":
                 log_level=LOG_LEVEL
             )
         else:
-            # Modo producción: usar Gunicorn + Uvicorn workers
-            logger.info(f"🚀 Modo PRODUCCIÓN: usando Gunicorn con {WORKERS} workers en {HOST}:{PORT}")
-            
-            cmd = [
-                "gunicorn",
-                "-k", "uvicorn.workers.UvicornWorker",
-                "-w", str(WORKERS),
-                "-b", f"{HOST}:{PORT}",
-                "--timeout", "120",
-                "--graceful-timeout", "30",
-                "--log-level", LOG_LEVEL,
-                "--access-logfile", "-",  # Logs a stdout
-                "--error-logfile", "-",   # Logs a stderr
-                "main:app"
-            ]
-            
-            logger.info(f"Ejecutando: {' '.join(cmd)}")
-            
-            # Ejecutar Gunicorn (reemplaza el proceso actual)
-            os.execvp("gunicorn", cmd)
+            # Modo producción: intentar Gunicorn, fallback a Uvicorn
+            try:
+                logger.info(f"🚀 Modo PRODUCCIÓN: usando Gunicorn con {WORKERS} workers")
+                
+                # Ejecutar Gunicorn
+                cmd = [
+                    "gunicorn",
+                    "-k", "uvicorn.workers.UvicornWorker",
+                    "-w", str(WORKERS),
+                    "-b", f"{HOST}:{PORT}",
+                    "--timeout", "120",
+                    "--graceful-timeout", "30",
+                    "--log-level", LOG_LEVEL,
+                    "--access-logfile", "-",
+                    "--error-logfile", "-",
+                    "main:app"
+                ]
+                
+                os.execvp("gunicorn", cmd)
+                
+            except FileNotFoundError:
+                # Gunicorn no disponible, usar Uvicorn
+                logger.warning("⚠️ Gunicorn no encontrado, usando Uvicorn con workers")
+                import uvicorn
+                uvicorn.run(
+                    "main:app",
+                    host=HOST,
+                    port=PORT,
+                    workers=WORKERS,
+                    log_level=LOG_LEVEL
+                )
     
     except Exception as e:
         logging.exception(f"❌ Error arrancando el servidor: {e}")
         sys.exit(1)
+```
+
+---
+
+## 📋 **Qué hace este código**
+
+1. **En desarrollo** (`DEBUG=true`):
+   - Usa Uvicorn con `reload=True`
+   - Un solo worker
+   - Recarga automática cuando cambias código
+
+2. **En producción** (`DEBUG=false`):
+   - Intenta usar **Gunicorn** (más robusto)
+   - Si Gunicorn no está instalado → usa **Uvicorn con workers** (como ahora)
+   - Múltiples workers según configuración
+
+---
+
+## 🚀 **Ventajas de este approach**
+
+- ✅ No necesitas cambiar el Start Command en Easypanel
+- ✅ Usa Gunicorn si está disponible (más robusto)
+- ✅ Fallback automático a Uvicorn si Gunicorn no está
+- ✅ Configurable con variables de entorno
+- ✅ Modo desarrollo fácil de activar (`DEBUG=true`)
+
+---
+
+## 🔍 **Después del cambio, los logs se verían así**
+
+### **Con Gunicorn (si está en requirements.txt):**
+```
+🚀 Modo PRODUCCIÓN: usando Gunicorn con 2 workers
+[INFO] Starting gunicorn 21.2.0
+[INFO] Listening at: http://0.0.0.0:8000
+[INFO] Using worker: uvicorn.workers.UvicornWorker
+[INFO] Booting worker with pid: 123
+[INFO] Booting worker with pid: 124
+✅ Data Manager inicializado
+✅ PostGIS conectado
+```
+
+### **Sin Gunicorn (fallback a Uvicorn):**
+```
+⚠️ Gunicorn no encontrado, usando Uvicorn con workers
+INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Started parent process [1]
+INFO:     Started server process [20]
+INFO:     Started server process [21]
+✅ Data Manager inicializado
+✅ PostGIS conectado
