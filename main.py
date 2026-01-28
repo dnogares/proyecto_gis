@@ -7,7 +7,7 @@ Arquitectura:
 - Servir: Archivos .fgb estáticos con soporte HTTP Range
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -281,8 +281,8 @@ async def obtener_capa_para_analisis(request: AnalisisRequest):
     if gdf is None or gdf.empty:
         raise HTTPException(404, f"Capa '{request.nombre_capa}' no encontrada")
     
-    # Retornar como GeoJSON
-    return JSONResponse(
+    # Retornar como GeoJSON (usamos Response para evitar doble codificación JSON)
+    return Response(
         content=gdf.to_json(),
         media_type="application/geo+json"
     )

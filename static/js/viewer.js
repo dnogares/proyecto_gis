@@ -18,7 +18,8 @@ class GISViewer {
             viaspocuarias: '#F57C00',
             espaciosnaturales: '#1976D2',
             masasagua: '#0288D1',
-            zonasinundables: '#F44336'
+            zonasinundables: '#F44336',
+            test_capa: '#9C27B0'
         };
         
         this.layerNames = {
@@ -26,7 +27,8 @@ class GISViewer {
             viaspocuarias: 'Vías Pecuarias',
             espaciosnaturales: 'Espacios Naturales',
             masasagua: 'Masas de Agua',
-            zonasinundables: 'Zonas Inundables'
+            zonasinundables: 'Zonas Inundables',
+            test_capa: 'Capa de Prueba'
         };
         
         // Estado de capas FGB disponibles
@@ -50,10 +52,10 @@ class GISViewer {
      * Inicializar mapa base Leaflet
      */
     initMap() {
-        // Crear mapa centrado en Almería
+        // Crear mapa centrado en Madrid (donde está test_capa)
         this.map = L.map(this.mapId, {
-            center: [36.8381, -2.4597],
-            zoom: 10,
+            center: [40.4167, -3.7033],
+            zoom: 13,
             zoomControl: true
         });
         
@@ -146,7 +148,10 @@ class GISViewer {
             'zonasinundables'
         ];
         
-        capasDefecto.forEach(nombre => {
+        // Combinar capas por defecto con capas detectadas
+        const todasCapas = [...new Set([...capasDefecto, ...this.fgbCapas.map(c => c.nombre)])];
+
+        todasCapas.forEach(nombre => {
             const div = document.createElement('div');
             div.className = 'layer-item';
             
@@ -195,7 +200,8 @@ class GISViewer {
             return;
         }
         
-        this.showLoading(`Cargando ${this.layerNames[nombre]}...`);
+        const alias = this.layerNames[nombre] || nombre;
+        this.showLoading(`Cargando ${alias}...`);
         
         try {
             // Verificar si existe FGB
@@ -213,7 +219,8 @@ class GISViewer {
             
         } catch (error) {
             console.error(`❌ Error cargando ${nombre}:`, error);
-            this.showNotification(`❌ Error cargando ${this.layerNames[nombre]}`, 'error');
+            const alias = this.layerNames[nombre] || nombre;
+            this.showNotification(`❌ Error cargando ${alias}`, 'error');
         } finally {
             this.hideLoading();
         }
@@ -237,8 +244,8 @@ class GISViewer {
             maxY: bounds.getNorth()
         };
         
-        // Crear layer group para esta capa
-        const layerGroup = L.layerGroup().addTo(this.map);
+        // Crear feature group para esta capa (permite getBounds)
+        const layerGroup = L.featureGroup().addTo(this.map);
         this.layers[nombre] = layerGroup;
         
         let featureCount = 0;
@@ -279,8 +286,9 @@ class GISViewer {
                 `✅ ${nombre}: ${featureCount} features en ${loadTime}s desde FlatGeobuf`
             );
             
+            const alias = this.layerNames[nombre] || nombre;
             this.showNotification(
-                `✅ ${this.layerNames[nombre]}: ${featureCount} elementos (${loadTime}s)`,
+                `✅ ${alias}: ${featureCount} elementos (${loadTime}s)`,
                 'success'
             );
             
@@ -348,8 +356,9 @@ class GISViewer {
                 `✅ ${nombre}: ${featureCount} features desde API en ${loadTime}s`
             );
             
+            const alias = this.layerNames[nombre] || nombre;
             this.showNotification(
-                `✅ ${this.layerNames[nombre]}: ${featureCount} elementos (${loadTime}s, API)`,
+                `✅ ${alias}: ${featureCount} elementos (${loadTime}s, API)`,
                 'success'
             );
             
