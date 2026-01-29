@@ -60,219 +60,95 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script>
-    let map = null;
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      map = L.map('map').setView([40.0, -3.7], 6);
-      
-      // Capa base minimalista (solo referencia)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: ' OpenStreetMap',
-        maxZoom: 19,
-        opacity: 0.3  // Muy transparente para que resalten las capas locales
-      }).addTo(map);
-      
-      // Cargar capas locales automáticamente
-      cargarCapasLocales();
-    });
-    
-    async function cargarCapasLocales() {
-      try {
-        const response = await fetch('/api/v1/capas/fgb');
-        const capas = await response.json();
+    // Variable global para el mapa
+    let map;
+    let drawnItems;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Inicializar el mapa con seguridad
+        map = L.map('map').setView([40.4167, -3.7033], 6);
         
-        console.log('🗺️ Capas locales encontradas:', capas.length);
-        
-        // Definir categorías y capas específicas a buscar
-        const categoriasCapas = {
-          'Vías Pecuarias': ['pecuaria', 'via', 'ganadera', 'trashumancia'],
-          'Montes Públicos': ['monte', 'forestal', 'publico', 'demanio'],
-          'Red Natura 2000': ['rednatura', 'natura', 'rn2000', 'ps.rnatura'],
-          'Espacio Hidráulico Protegido': ['agua', 'rio', 'costa', 'hidraulico', 'embalse', 'cuenca'],
-          'Zonas Inundables': ['inundable', 'inundacion', 'avenida', 'riada'],
-          'Riesgo Sísmico': ['sismico', 'sismo', 'terremoto', 'seismic'],
-          'Riesgo Desertificación': ['desertificacion', 'desert', 'arido', 'erosion'],
-          'Riesgo Volcánico': ['volcan', 'volcanico', 'lava', 'ceniza'],
-          'Bienes de Interés Cultural': ['bic', 'cultural', 'patrimonio', 'monumento', 'historico'],
-          'IGN Base': ['ign', 'base', 'cartografia', 'mtn']
-        };
-        
-        // Buscar y cargar capas por categorías
-        Object.entries(categoriasCapas).forEach(([categoria, keywords]) => {
-          const capasCategoria = capas.filter(capa => 
-            keywords.some(keyword => 
-              capa.archivo.toLowerCase().includes(keyword.toLowerCase()) ||
-              (capa.nombre && capa.nombre.toLowerCase().includes(keyword.toLowerCase()))
-            )
-          );
-          
-          if (capasCategoria.length > 0) {
-            console.log(`📂 ${categoria}: ${capasCategoria.length} capas`);
-            capasCategoria.forEach(capa => {
-              cargarCapaFlatGeobuf(capa, categoria);
-            });
-          }
-        });
-        
-        // Actualizar lista en el UI organizada por categorías
-        actualizarListaCapasPorCategorias(capas, categoriasCapas);
-        
-      } catch (error) {
-        console.error('❌ Error cargando capas locales:', error);
-      }
-    }
-    
-    async function cargarCapaFlatGeobuf(capa, categoria = 'General') {
-      try {
-        console.log(`📂 Cargando capa: ${capa.archivo} (${categoria})`);
-        
-        const response = await fetch(capa.url);
-        const arrayBuffer = await response.arrayBuffer();
-        
-        // Usar FlatGeobuf para leer los datos
-        const features = [];
-        const it = flatgeobuf.deserialize(new Uint8Array(arrayBuffer));
-        for await (const feature of it) {
-          features.push(feature);
-        }
-        
-        // Crear capa GeoJSON y añadirla al mapa
-        const geoJsonLayer = L.geoJSON(features, {
-          style: function(feature) {
-            return {
-              fillColor: getColorForCategoria(categoria),
-              weight: 2,
-              opacity: 0.8,
-              color: getColorForCategoria(categoria),
-              fillOpacity: 0.3
-            };
-          },
-          onEachFeature: function(feature, layer) {
-            if (feature.properties) {
-              const popupContent = Object.entries(feature.properties)
-                .slice(0, 5)  // Primeras 5 propiedades
-                .map(([key, value]) => `<b>${key}:</b> ${value}`)
-                .join('<br>');
-              layer.bindPopup(`<b>${categoria}</b><br><b>${capa.nombre || capa.archivo}</b><br>${popupContent}`);
-            }
-          }
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
         }).addTo(map);
-        
-        console.log(`✅ Capa cargada: ${capa.archivo} (${features.length} elementos) - ${categoria}`);
-        
-      } catch (error) {
-        console.error(`❌ Error cargando ${capa.archivo}:`, error);
-      }
-    }
-    
-    function getColorForCategoria(categoria) {
-      const colors = {
-        'Vías Pecuarias': '#8B4513',      // Marrón
-        'Montes Públicos': '#228B22',     // Verde bosque
-        'Red Natura 2000': '#2ECC71',     // Verde esmeralda
-        'Espacio Hidráulico Protegido': '#3498DB',  // Azul agua
-        'Zonas Inundables': '#5DADE2',    // Azul claro
-        'Riesgo Sísmico': '#E74C3C',      // Rojo
-        'Riesgo Desertificación': '#F39C12', // Naranja
-        'Riesgo Volcánico': '#8B0000',     // Rojo oscuro
-        'Bienes de Interés Cultural': '#9B59B6', // Púrpura
-        'IGN Base': '#7F8C8D',            // Gris
-        'General': '#95A5A6'              // Gris por defecto
-      };
-      
-      return colors[categoria] || colors['General'];
-    }
-    
-    function actualizarListaCapasPorCategorias(capas, categoriasCapas) {
-      const capasList = document.getElementById('capasList');
-      if (!capasList) return;
-      
-      let html = '<h4>🗺️ Capas por Categorías:</h4>';
-      
-      // Mostrar capas organizadas por categorías
-      Object.entries(categoriasCapas).forEach(([categoria, keywords]) => {
-        const capasCategoria = capas.filter(capa => 
-          keywords.some(keyword => 
-            capa.archivo.toLowerCase().includes(keyword.toLowerCase()) ||
-            (capa.nombre && capa.nombre.toLowerCase().includes(keyword.toLowerCase()))
-          )
-        );
-        
-        if (capasCategoria.length > 0) {
-          const color = getColorForCategoria(categoria);
-          html += `
-            <div style="margin: 10px 0; padding: 8px; border-left: 4px solid ${color}; background: rgba(0,0,0,0.05);">
-              <strong style="color: ${color};">${categoria}</strong> (${capasCategoria.length})
-              <div style="margin-left: 10px; margin-top: 5px;">
-          `;
-          
-          capasCategoria.forEach(capa => {
-            html += `
-              <div style="margin: 3px 0;">
-                <label style="font-size: 12px;">
-                  <input type="checkbox" checked onchange="toggleCapa('${capa.archivo}', this.checked)">
-                  ${capa.nombre || capa.archivo}
-                </label>
-              </div>
-            `;
-          });
-          
-          html += '</div></div>';
-        }
-      });
-      
-      // Añadir capas sin categorizar
-      const capasSinCategoria = capas.filter(capa => {
-        return !Object.values(categoriasCapas).some(keywords =>
-          keywords.some(keyword => 
-            capa.archivo.toLowerCase().includes(keyword.toLowerCase()) ||
-            (capa.nombre && capa.nombre.toLowerCase().includes(keyword.toLowerCase()))
-          )
-        );
-      });
-      
-      if (capasSinCategoria.length > 0) {
-        html += `
-          <div style="margin: 10px 0; padding: 8px; border-left: 4px solid #95A5A6; background: rgba(0,0,0,0.05);">
-            <strong style="color: #95A5A6;">Otras Capas</strong> (${capasSinCategoria.length})
-            <div style="margin-left: 10px; margin-top: 5px;">
-        `;
-        
-        capasSinCategoria.forEach(capa => {
-          html += `
-            <div style="margin: 3px 0;">
-              <label style="font-size: 12px;">
-                <input type="checkbox" onchange="toggleCapa('${capa.archivo}', this.checked)">
-                ${capa.nombre || capa.archivo}
-              </label>
-            </div>
-          `;
+
+        // 2. Configurar herramientas de dibujo
+        drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: { polygon: true, polyline: false, rectangle: true, circle: false, marker: false }
         });
+        map.addControl(drawControl);
+
+        // SOLUCIÓN AL ERROR 'ON' de null: El evento se asigna DESPUÉS de crear el mapa
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers(); // Limpiar dibujos previos
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+            
+            // Aquí llamaríamos a la función de análisis que vimos antes
+            const geometria = layer.toGeoJSON().geometry;
+            console.log("Geometría lista para analizar:", geometria);
+        });
+
+        console.log("✅ Mapa y controles de dibujo listos");
         
-        html += '</div></div>';
-      }
-      
-      capasList.innerHTML = html;
-    }
-    
-    async function toggleCapa(archivo, activar) {
-      if (activar) {
-        // Buscar la capa y cargarla
+        // Cargar la lista de capas automáticamente
+        await cargarListaCapas();
+    });
+
+    // 2. SOLUCIÓN AL ERROR 'Unexpected token g' (Lectura binaria de FGB)
+    async function cargarCapaIndividual(nombre, url) {
+        console.log(`� Descargando binario FGB: ${nombre}`);
+        
         try {
-          const response = await fetch('/api/v1/capas/fgb');
-          const capas = await response.json();
-          const capa = capas.find(c => c.archivo === archivo);
-          if (capa) {
-            await cargarCapaFlatGeobuf(capa);
-          }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Error en la descarga");
+
+            // IMPORTANTE: flatgeobuf.deserialize espera el body de la respuesta
+            const iter = flatgeobuf.deserialize(response.body);
+            
+            const fgLayer = L.geoJSON(null, {
+                style: { color: '#3b82f6', weight: 2, fillOpacity: 0.3 },
+                onEachFeature: (feature, layer) => {
+                    layer.bindPopup(`<b>Capa:</b> ${nombre}`);
+                }
+            }).addTo(map);
+
+            // Leemos el stream binario
+            for await (let feature of iter) {
+                fgLayer.addData(feature);
+            }
+            
+            console.log(`✅ Capa ${nombre} renderizada con éxito`);
+            map.fitBounds(fgLayer.getBounds());
+
         } catch (error) {
-          console.error('Error toggling capa:', error);
+            console.error("❌ Fallo crítico cargando FGB:", error);
+            alert("El archivo no es un JSON válido, pero el cargador binario también falló. Revisa la consola.");
         }
-      }
-      // TODO: Implementar remover capa si se desactiva
     }
-    
+
+    async function cargarListaCapas() {
+        const res = await fetch('/api/v1/capas/fgb');
+        const data = await res.json();
+        const container = document.getElementById('capasList'); // Asegúrate de que este ID existe
+        
+        if (data.capas) {
+            data.capas.forEach(capa => {
+                const btn = document.createElement('button');
+                btn.className = "btn-capa";
+                btn.innerHTML = `<span>📁</span> ${capa.nombre}`;
+                btn.onclick = () => cargarCapaIndividual(capa.nombre, capa.url);
+                container.appendChild(btn);
+            });
+        }
+    }
+
     async function cargarReferencia() {
       const ref = document.getElementById('refInput').value.trim();
       if (!ref) {
@@ -309,20 +185,7 @@
 
     async function cargarCapas() {
       // Esta función ahora carga las capas locales
-      await cargarCapasLocales();
-    }
-
-    async function cargarCapaIndividual(url) {
-      try {
-        const response = await fetch(url);
-        const geojson = await response.json();
-        L.geoJSON(geojson, {
-          style: { color: '#3b82f6', weight: 2, fillOpacity: 0.3 }
-        }).addTo(map);
-      } catch (e) {
-        console.error('Error:', e);
-        alert('Error cargando capa');
-      }
+      await cargarListaCapas();
     }
   </script>
 </body>
