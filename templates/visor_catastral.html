@@ -328,6 +328,7 @@
       <div class="panel-section">
         <div class="tab-nav">
           <button class="tab-btn active" onclick="switchInternalTab('referencia')">Referencia</button>
+          <button class="tab-btn" onclick="switchInternalTab('capas')">Capas</button>
           <button class="tab-btn" onclick="switchInternalTab('urbanismo')">Urbanismo</button>
           <button class="tab-btn" onclick="switchInternalTab('afecciones')">Afecciones</button>
           <button class="tab-btn" onclick="switchInternalTab('pdf')">PDF</button>
@@ -340,6 +341,31 @@
           <div id="refDatos" style="font-size:12px; color:#64748b;">
             Carga una referencia para ver sus datos
           </div>
+        </div>
+      </div>
+
+      <div id="tab-capas" class="tab-content">
+        <div class="panel-section">
+          <h4>🗺️ Capas Disponibles</h4>
+          <button class="action-btn" onclick="cargarCapasDisponibles()" style="width: 100%; margin-bottom: 8px;">
+            🔄 Cargar Lista de Capas
+          </button>
+          <div id="capasContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
+            <div style="font-size:12px; color:#999;">Haz clic en "Cargar Lista de Capas" para ver las disponibles</div>
+          </div>
+          <button class="action-btn" onclick="cargarCapasSeleccionadas()" style="width: 100%; margin-top: 8px;">
+            📥 Cargar Capas Seleccionadas
+          </button>
+        </div>
+        
+        <div class="panel-section">
+          <h4>🎛️ Control de Capas</h4>
+          <div id="capasCargadas" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
+            <div style="font-size:12px; color:#999;">No hay capas cargadas</div>
+          </div>
+          <button class="action-btn error" onclick="limpiarCapasCargadas()" style="width: 100%; margin-top: 8px;">
+            🗑️ Limpiar Capas
+          </button>
         </div>
       </div>
 
@@ -412,7 +438,9 @@
     const state = {
       referencias: [],
       resultsUrbanismo: {},
-      resultsAfecciones: {}
+      resultsAfecciones: {},
+      capasDisponibles: [],
+      capasCargadas: new Map()
     };
 
     // Inicialización
@@ -440,7 +468,7 @@
       }
 
       const btns = document.querySelectorAll('.tab-btn');
-      const tabMap = { 'referencia': 0, 'urbanismo': 1, 'afecciones': 2, 'pdf': 3 };
+      const tabMap = { 'referencia': 0, 'capas': 1, 'urbanismo': 2, 'afecciones': 3, 'pdf': 4 };
       if (tabMap[tab] !== undefined) {
         btns[tabMap[tab]].classList.add('active');
       }
@@ -1102,6 +1130,212 @@
         }
       } catch (e) {
         resultEl.innerHTML = `❌ Error: ${e.message}`;
+      }
+    }
+
+    // ===== FUNCIONES DE GESTIÓN DE CAPAS =====
+    
+    // Cargar lista de capas disponibles desde /app/capas
+    async function cargarCapasDisponibles() {
+      const container = document.getElementById('capasContainer');
+      container.innerHTML = '<div style="font-size:12px; color:#999;">⏳ Cargando capas...</div>';
+      
+      try {
+        const response = await fetch('/api/v1/capas/fgb');
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const capas = data.capas || [];
+        state.capasDisponibles = capas;
+        
+        if (capas.length === 0) {
+          container.innerHTML = '<div style="font-size:12px; color:#999;">No hay capas disponibles en /app/capas</div>';
+          return;
+        }
+        
+        container.innerHTML = '';
+        capas.forEach((capa, index) => {
+          const div = document.createElement('div');
+          div.style.cssText = 'margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px; border: 1px solid #e9ecef;';
+          
+          const id = `chk_capa_${index}`;
+          div.innerHTML = `
+            <input type="checkbox" id="${id}" data-nombre="${capa.nombre}" data-url="${capa.url}" 
+                   style="margin-right: 8px;" onchange="actualizarBotonCargarCapas()">
+            <label for="${id}" style="font-size:12px; cursor: pointer; margin: 0;">
+              <strong>${capa.nombre}</strong><br>
+              <small style="color: #6c757d;">${capa.archivo || capa.url}</small>
+            </label>
+          `;
+          container.appendChild(div);
+        });
+        
+        console.log(`✅ ${capas.length} capas disponibles cargadas`);
+        
+      } catch (error) {
+        console.error('Error cargando capas:', error);
+        container.innerHTML = `<div style="font-size:12px; color:#dc3545;">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Actualizar estado del botón de cargar capas
+    function actualizarBotonCargarCapas() {
+      const checkboxes = document.querySelectorAll('#capasContainer input[type="checkbox"]:checked');
+      const boton = document.querySelector('button[onclick="cargarCapasSeleccionadas()"]');
+      
+      if (checkboxes.length > 0) {
+        boton.textContent = `📥 Cargar ${checkboxes.length} Capa(s)`;
+        boton.style.background = 'rgba(40, 167, 69, 0.8)';
+      } else {
+        boton.textContent = '📥 Cargar Capas Seleccionadas';
+        boton.style.background = '';
+      }
+    }
+    
+    // Cargar capas seleccionadas al mapa
+    async function cargarCapasSeleccionadas() {
+      const checkboxes = document.querySelectorAll('#capasContainer input[type="checkbox"]:checked');
+      
+      if (checkboxes.length === 0) {
+        alert('Por favor, selecciona al menos una capa');
+        return;
+      }
+      
+      const capasCargadasDiv = document.getElementById('capasCargadas');
+      capasCargadasDiv.innerHTML = '<div style="font-size:12px; color:#999;">⏳ Cargando capas...</div>';
+      
+      let cargadas = 0;
+      let errores = 0;
+      
+      for (const checkbox of checkboxes) {
+        const nombre = checkbox.dataset.nombre;
+        const url = checkbox.dataset.url;
+        
+        try {
+          console.log(`🔄 Cargando capa: ${nombre} desde ${url}`);
+          
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
+          
+          const geojson = await response.json();
+          
+          // Crear capa con estilo aleatorio
+          const colores = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#48dbfb'];
+          const color = colores[state.capasCargadas.size % colores.length];
+          
+          const layer = L.geoJSON(geojson, {
+            style: {
+              color: color,
+              weight: 2,
+              fillOpacity: 0.3,
+              fillColor: color
+            },
+            onEachFeature: function(feature, layer) {
+              if (feature.properties) {
+                const popupContent = Object.entries(feature.properties)
+                  .slice(0, 5) // Limitar a 5 propiedades
+                  .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                  .join('<br>');
+                layer.bindPopup(`<strong>${nombre}</strong><br><br>${popupContent}`);
+              }
+            }
+          });
+          
+          // Añadir al mapa y guardar referencia
+          layer.addTo(map);
+          state.capasCargadas.set(nombre, {
+            layer: layer,
+            color: color,
+            url: url
+          });
+          
+          cargadas++;
+          
+        } catch (error) {
+          console.error(`Error cargando capa ${nombre}:`, error);
+          errores++;
+        }
+      }
+      
+      // Actualizar UI
+      actualizarListaCapasCargadas();
+      
+      // Ajustar vista a las capas cargadas
+      if (state.capasCargadas.size > 0) {
+        const group = new L.featureGroup(Array.from(state.capasCargadas.values()).map(item => item.layer));
+        map.fitBounds(group.getBounds().pad(0.1));
+      }
+      
+      // Mostrar resultado
+      const mensaje = cargadas > 0 
+        ? `✅ ${cargadas} capa(s) cargada(s)${errores > 0 ? ` (${errores} con errores)` : ''}`
+        : `❌ No se pudieron cargar las capas`;
+      
+      alert(mensaje);
+      
+      // Limpiar selección
+      checkboxes.forEach(cb => cb.checked = false);
+      actualizarBotonCargarCapas();
+    }
+    
+    // Actualizar lista de capas cargadas
+    function actualizarListaCapasCargadas() {
+      const container = document.getElementById('capasCargadas');
+      
+      if (state.capasCargadas.size === 0) {
+        container.innerHTML = '<div style="font-size:12px; color:#999;">No hay capas cargadas</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      state.capasCargadas.forEach((info, nombre) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'margin-bottom: 6px; padding: 6px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ' + info.color + ';';
+        
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size:11px; font-weight:500;">${nombre}</span>
+            <button onclick="toggleCapa('${nombre}')" style="padding: 2px 6px; font-size:10px; background: ${info.color}; color: white; border: none; border-radius: 3px; cursor: pointer;">
+              👁️
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+    
+    // Alternar visibilidad de capa
+    function toggleCapa(nombre) {
+      const info = state.capasCargadas.get(nombre);
+      if (!info) return;
+      
+      if (map.hasLayer(info.layer)) {
+        map.removeLayer(info.layer);
+      } else {
+        info.layer.addTo(map);
+      }
+    }
+    
+    // Limpiar todas las capas cargadas
+    function limpiarCapasCargadas() {
+      if (state.capasCargadas.size === 0) {
+        alert('No hay capas cargadas para limpiar');
+        return;
+      }
+      
+      if (confirm(`¿Estás seguro de eliminar las ${state.capasCargadas.size} capa(s) cargada(s)?`)) {
+        state.capasCargadas.forEach((info, nombre) => {
+          map.removeLayer(info.layer);
+        });
+        
+        state.capasCargadas.clear();
+        actualizarListaCapasCargadas();
+        
+        console.log('🗑️ Capas cargadas eliminadas');
       }
     }
   </script>
