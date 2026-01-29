@@ -107,9 +107,11 @@ async def health_check():
 
 @app.get("/api/v1/debug/sync-check")
 async def sync_check():
+    import datetime
+    now = datetime.datetime.now()
     return {
         "status": "synchronized",
-        "timestamp": "2026-01-29T19:55:00",
+        "timestamp": now.strftime("%Y-%m-%dT%H:%M:%S"),
         "cache_bust": CACHE_BUST,
         "main_page": "Visor Catastral (index.html)",
         "routes": {
@@ -134,7 +136,25 @@ async def sync_check():
                 "custom_map_code"
             ]
         },
-        "message": "✅ SOLUCIÓN FINAL - Visor Catastral como página principal con orden correcto de scripts"
+        "message": "🚀 VERSIÓN ACTUALIZADA - Visor Catastral con análisis de afecciones",
+        "version": "3.0-FORZADA-" + str(int(now.timestamp()))
+    }
+
+@app.get("/api/v1/force-update")
+async def force_update():
+    """Endpoint para forzar actualización y romper cachés"""
+    import datetime
+    import os
+    
+    now = datetime.datetime.now()
+    return {
+        "status": "force_update_triggered",
+        "timestamp": now.strftime("%Y-%m-%dT%H:%M:%S"),
+        "cache_bust": CACHE_BUST,
+        "pid": os.getpid(),
+        "message": "🔄 FORZANDO ACTUALIZACIÓN - Si ves esto, el código nuevo está activo",
+        "version": "3.0-FORZADA-" + str(int(now.timestamp())),
+        "action": "Reinicia el servicio en EasyPanel si sigues viendo la versión vieja"
     }
 
 @app.post("/api/v1/analisis/interseccion")
