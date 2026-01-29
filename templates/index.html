@@ -714,8 +714,7 @@
 
                     <div class="form-group">
                         <label class="form-label">🔍 Buscar ubicación</label>
-                        <input type="text" class="form-input" id="search-location"
-                            placeholder="Ej: Almería, España">
+                        <input type="text" class="form-input" id="search-location" placeholder="Ej: Almería, España">
                     </div>
 
                     <button class="btn btn-primary btn-block" onclick="searchLocation()">
@@ -739,8 +738,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Referencia Catastral</label>
-                        <input type="text" class="form-input" id="ref-catastral"
-                            placeholder="Ej: 1234567AB1234D">
+                        <input type="text" class="form-input" id="ref-catastral" placeholder="Ej: 1234567AB1234D">
                         <p class="form-hint">Formato: 7 dígitos + 2 letras + 5 dígitos + letra de control</p>
                     </div>
 
@@ -783,8 +781,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Referencia Catastral (opcional)</label>
-                        <input type="text" class="form-input" id="analisis-ref"
-                            placeholder="Ej: 1234567AB1234D">
+                        <input type="text" class="form-input" id="analisis-ref" placeholder="Ej: 1234567AB1234D">
                     </div>
 
                     <div class="form-group">
@@ -867,40 +864,15 @@
         // ====================================================================
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Inicializando GIS Platform v3.0...');
-            initMap();
+
+            // Inicializar el Visor GIS Avanzado (desde viewer.js)
+            window.gisViewer = new GISViewer('map');
+
             initTabs();
-            initViewer();
             initDrawControls();
         });
 
-        // ====================================================================
-        // MAPA BASE
-        // ====================================================================
-        function initMap() {
-            map = L.map('map').setView([36.8381, -2.4597], 10);
-
-            // Capas base
-            const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19
-            });
-
-            const satellite = L.tileLayer(
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                { attribution: 'Esri', maxZoom: 19 }
-            );
-
-            osm.addTo(map);
-
-            L.control.layers({
-                'Mapa': osm,
-                'Satélite': satellite
-            }).addTo(map);
-
-            L.control.scale({ imperial: false }).addTo(map);
-
-            console.log('✅ Mapa inicializado');
-        }
+        // initMap y initViewer ahora se delegan a GISViewer
 
         // ====================================================================
         // SISTEMA DE TABS
@@ -913,6 +885,7 @@
 
         function switchTab(tabName) {
             currentTab = tabName;
+            const map = window.gisViewer.map;
 
             // Actualizar tabs
             document.querySelectorAll('.nav-tab').forEach(t => {
@@ -955,53 +928,10 @@
         }
 
         // ====================================================================
-        // VISOR GIS
-        // ====================================================================
-        function initViewer() {
-            // Implementación simplificada del visor
-            // En producción, usar viewer.js completo
-
-            const capas = [
-                { id: 'rednatura', nombre: 'Red Natura 2000', color: '#2E7D32' },
-                { id: 'viaspocuarias', nombre: 'Vías Pecuarias', color: '#F57C00' },
-                { id: 'espaciosnaturales', nombre: 'Espacios Naturales', color: '#1976D2' },
-                { id: 'masasagua', nombre: 'Masas de Agua', color: '#0288D1' },
-                { id: 'zonasinundables', nombre: 'Zonas Inundables', color: '#F44336' }
-            ];
-
-            const layerList = document.getElementById('layer-list');
-
-            capas.forEach(capa => {
-                const div = document.createElement('div');
-                div.className = 'layer-item';
-                div.innerHTML = `
-                    <input type="checkbox" id="layer-${capa.id}">
-                    <span class="layer-color" style="background: ${capa.color}"></span>
-                    <span class="layer-label">${capa.nombre}</span>
-                `;
-
-                div.querySelector('input').addEventListener('change', (e) => {
-                    toggleLayer(capa.id, e.target.checked);
-                });
-
-                layerList.appendChild(div);
-            });
-
-            console.log('✅ Visor inicializado');
-        }
-
-        function toggleLayer(layerId, visible) {
-            console.log(`${visible ? 'Activando' : 'Desactivando'} capa: ${layerId}`);
-            showNotification(`Capa ${layerId} ${visible ? 'activada' : 'desactivada'}`, 'info');
-            // Aquí integrar con viewer.js real
-        }
-
-        // ====================================================================
         // CONTROLES DE DIBUJO
         // ====================================================================
         function initDrawControls() {
-            drawnItems = new L.FeatureGroup();
-            map.addLayer(drawnItems);
+            const map = window.gisViewer.map; // Usar el mapa del visor
 
             drawControl = new L.Control.Draw({
                 draw: {
