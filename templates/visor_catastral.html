@@ -265,8 +265,135 @@
     }
   </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.min.js"></script>
+  <script>
+    // Variable global para el mapa
+    let map;
+    let drawnItems;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Inicializar el mapa con seguridad
+        map = L.map('map').setView([40.4167, -3.7033], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // 2. Configurar herramientas de dibujo
+        drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: { polygon: true, polyline: false, rectangle: true, circle: false, marker: false }
+        });
+        map.addControl(drawControl);
+
+        // SOLUCIÓN AL ERROR 'ON' de null: El evento se asigna DESPUÉS de crear el mapa
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers(); // Limpiar dibujos previos
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+            
+            // Aquí llamaríamos a la función de análisis que vimos antes
+            const geometria = layer.toGeoJSON().geometry;
+            console.log("Geometría lista para analizar:", geometria);
+        });
+
+        console.log("✅ Mapa y controles de dibujo listos");
+        
+        // Cargar la lista de capas automáticamente
+        await cargarListaCapas();
+    });
+
+    // 2. SOLUCIÓN AL ERROR 'Unexpected token g' (Lectura binaria de FGB)
+    async function cargarCapaIndividual(nombre, url) {
+        console.log(`🔄 Descargando binario FGB: ${nombre}`);
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Error en la descarga");
+
+            // IMPORTANTE: flatgeobuf.deserialize espera el body de la respuesta
+            const iter = flatgeobuf.deserialize(response.body);
+            
+            const fgLayer = L.geoJSON(null, {
+                style: { color: '#3b82f6', weight: 2, fillOpacity: 0.3 },
+                onEachFeature: (feature, layer) => {
+                    layer.bindPopup(`<b>Capa:</b> ${nombre}`);
+                }
+            }).addTo(map);
+
+            // Leemos el stream binario
+            for await (let feature of iter) {
+                fgLayer.addData(feature);
+            }
+            
+            console.log(`✅ Capa ${nombre} renderizada con éxito`);
+            map.fitBounds(fgLayer.getBounds());
+
+        } catch (error) {
+            console.error("❌ Fallo crítico cargando FGB:", error);
+            alert("El archivo no es un JSON válido, pero el cargador binario también falló. Revisa la consola.");
+        }
+    }
+
+    async function cargarListaCapas() {
+        const res = await fetch('/api/v1/capas/fgb');
+        const data = await res.json();
+        const container = document.getElementById('capasList'); // Asegúrate de que este ID existe
+        
+        if (data.capas) {
+            data.capas.forEach(capa => {
+                const btn = document.createElement('button');
+                btn.className = "btn-capa";
+                btn.innerHTML = `<span>📁</span> ${capa.nombre}`;
+                btn.onclick = () => cargarCapaIndividual(capa.nombre, capa.url);
+                container.appendChild(btn);
+            });
+        }
+    }
+
+    async function cargarReferencia() {
+      const ref = document.getElementById('refInput').value.trim();
+      if (!ref) {
+        alert('Por favor, introduce una referencia catastral');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
+        if (!response.ok) {
+          alert('Referencia no encontrada');
+          return;
+        }
+        
+        const geojson = await response.json();
+        
+        L.geoJSON(geojson, {
+          style: {
+            color: '#e74c3c',
+            weight: 3,
+            fillOpacity: 0.3
+          }
+        }).addTo(map);
+        
+        // Centrar mapa en la referencia
+        const bounds = L.geoJSON(geojson).getBounds();
+        map.fitBounds(bounds);
+        
+      } catch (error) {
+        console.error('Error cargando referencia:', error);
+        alert('Error cargando referencia');
+      }
+    }
+
+    async function cargarCapas() {
+      // Esta función ahora carga las capas locales
+      await cargarListaCapas();
+    }
+  </script>
 </head>
 
 <body>
