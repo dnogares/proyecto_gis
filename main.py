@@ -985,13 +985,13 @@ if __name__ == "__main__":
     LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
     DEBUG = os.getenv("DEBUG", "false").lower() in ("1", "true", "yes")
     
-    # Determinar número de workers
+    # Determinar número de workers para Gunicorn
     MAX_WORKERS = 4
     WORKERS = int(os.getenv("WORKERS", str(min(MAX_WORKERS, max(2, multiprocessing.cpu_count() or 2)))))
     
     try:
         if DEBUG:
-            # Modo desarrollo: Uvicorn con reload
+            # Modo desarrollo: Solo Uvicorn con reload
             logger.info("🔧 Modo DESARROLLO: Uvicorn con reload")
             import uvicorn
             uvicorn.run(
@@ -1002,37 +1002,28 @@ if __name__ == "__main__":
                 log_level=LOG_LEVEL
             )
         else:
-            # Modo producción: intentar Gunicorn, fallback a Uvicorn
-            try:
-                logger.info(f"🚀 Modo PRODUCCIÓN: usando Gunicorn con {WORKERS} workers")
-                
-                # Ejecutar Gunicorn
-                cmd = [
-                    "gunicorn",
-                    "-k", "uvicorn.workers.UvicornWorker",
-                    "-w", str(WORKERS),
-                    "-b", f"{HOST}:{PORT}",
-                    "--timeout", "120",
-                    "--graceful-timeout", "30",
-                    "--log-level", LOG_LEVEL,
-                    "--access-logfile", "-",
-                    "--error-logfile", "-",
-                    "main:app"
-                ]
-                
-                os.execvp("gunicorn", cmd)
-                
-            except FileNotFoundError:
-                # Gunicorn no disponible, usar Uvicorn
-                logger.warning("⚠️ Gunicorn no encontrado, usando Uvicorn con workers")
-                import uvicorn
-                uvicorn.run(
-                    "main:app",
-                    host=HOST,
-                    port=PORT,
-                    workers=WORKERS,
-                    log_level=LOG_LEVEL
-                )
+            # Modo producción: ÚNICAMENTE Gunicorn
+            logger.info(f"🚀 Modo PRODUCCIÓN: Gunicorn con {WORKERS} workers")
+            
+            # Ejecutar Gunicorn directamente
+            cmd = [
+                "gunicorn",
+                "-k", "uvicorn.workers.UvicornWorker",
+                "-w", str(WORKERS),
+                "-b", f"{HOST}:{PORT}",
+                "--timeout", "120",
+                "--graceful-timeout", "30",
+                "--log-level", LOG_LEVEL,
+                "--access-logfile", "-",
+                "--error-logfile", "-",
+                "--worker-connections", "1000",
+                "--max-requests", "1000",
+                "--max-requests-jitter", "50",
+                "main:app"
+            ]
+            
+            logger.info(f"📋 Comando: {' '.join(cmd)}")
+            os.execvp("gunicorn", cmd)
     
     except Exception as e:
         logging.exception(f"❌ Error arrancando el servidor: {e}")

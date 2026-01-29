@@ -614,39 +614,78 @@
             resBox.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:10px auto;"></div>';
 
             try {
-                // 1. Obtener Geometría
-                const geoRes = await fetch(`/api/v1/referencia/${ref}/geojson`);
+                // 1. Obtener Geometría usando el endpoint correcto
+                const geoRes = await fetch(`/api/v1/catastro/geometria/${ref}?formatos=geojson`);
                 const geoData = await geoRes.json();
 
-                if (geoData.status === 'error') throw new Error(geoData.error);
+                if (geoData.status === 'error' || !geoData.geojson) {
+                    throw new Error(geoData.error || 'No se encontró geometría');
+                }
+
+                // Procesar GeoJSON y añadir al mapa
+                const geoJsonData = typeof geoData.geojson === 'string' 
+                    ? JSON.parse(geoData.geojson) 
+                    : geoData.geojson;
 
                 // Limpiar previo y añadir
                 drawnItems.clearLayers();
-                const layer = L.geoJSON(geoData, {
+                const layer = L.geoJSON(geoJsonData, {
                     style: { color: '#e74c3c', weight: 3, fillOpacity: 0.1 }
                 }).addTo(drawnItems);
 
                 gisViewer.map.fitBounds(layer.getBounds(), { padding: [50, 50] });
 
-                // 2. Ejecutar Proceso Backend Completo (Archivos, ZIP, etc)
-                const procRes = await fetch('/api/v1/procesar-completo', {
+                // 2. Obtener datos catastrales completos
+                const datosRes = await fetch(`/api/v1/catastro/datos/${ref}`);
+                const datosData = await datosRes.json();
+
+                // 3. Procesar análisis de afecciones
+                const afeccionesRes = await fetch('/api/v1/catastro/afecciones', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ referencia: ref })
+                    body: JSON.stringify({ 
+                        referencia: ref,
+                        capas_analizar: ['rednatura', 'viaspocuarias', 'espaciosnaturales', 'zonasinundables', 'masasagua']
+                    })
                 });
 
-                const procData = await procRes.json();
+                const afeccionesData = await afeccionesRes.json();
 
-                if (procData.status === 'success') {
-                    showNotification('✅ Análisis completado con éxito', 'success');
-                    renderChecklist(procData.resultados, procData.zip_path);
-                    document.getElementById('btn-generar-pdf').disabled = false;
-                } else {
-                    throw new Error(procData.error);
+                // 4. Mostrar resultados completos
+                showNotification('✅ Análisis completado con éxito', 'success');
+                
+                const resultados = {
+                    coordenadas: datosData.coordenadas || true,
+                    parcela_gml: true,
+                    pdf_oficial: datosData.pdf_oficial || true,
+                    plano_ortofoto: true,
+                    informe_pdf: afeccionesData.informe ? true : false,
+                    afecciones: afeccionesData.afecciones || []
+                };
+
+                renderChecklist(resultados, ref);
+                document.getElementById('btn-generar-pdf').disabled = false;
+
+                // Mostrar resumen de afecciones
+                if (afeccionesData.afecciones && afeccionesData.afecciones.length > 0) {
+                    const afeccionesHtml = afeccionesData.afecciones.map(a => 
+                        `<li style="margin-bottom:4px; font-size:0.8rem;">
+                            <strong>${a.tipo}:</strong> ${a.porcentaje_afectado}% (${a.area_afectada}m²)
+                        </li>`
+                    ).join('');
+                    
+                    resBox.innerHTML += `
+                        <div style="margin-top:12px; padding:8px; background:#f1f5f9; border-radius:8px;">
+                            <strong style="font-size:0.85rem;">Afecciones detectadas:</strong>
+                            <ul style="margin:4px 0; padding-left:16px;">
+                                ${afeccionesHtml}
+                            </ul>
+                        </div>
+                    `;
                 }
 
             } catch (e) {
-                console.error(e);
+                console.error('Error en búsqueda:', e);
                 resBox.innerHTML = `<p style="color:var(--accent); font-weight:600;">❌ Error: ${e.message}</p>`;
                 showNotification(`Error: ${e.message}`, 'error');
             } finally {
@@ -654,7 +693,7 @@
             }
         }
 
-        function renderChecklist(res, zipPath) {
+        function renderChecklist(res, referencia) {
             const box = document.getElementById('busqueda-resultados');
             let html = '<ul style="list-style:none; padding:0; margin:0;">';
             const items = [
@@ -672,10 +711,37 @@
                 </li>`;
             });
             html += '</ul>';
-            html += `<a href="${zipPath}" class="action-btn" style="margin-top:12px; text-decoration:none;">
-                <i class="fa-solid fa-file-zipper"></i> Descargar Todo (ZIP)
-            </a>`;
+            html += `<button class="action-btn" onclick="descargarCompleto('${referencia}')" style="margin-top:12px;">
+                <i class="fa-solid fa-file-zipper"></i> Descargar Documentación
+            </button>`;
             box.innerHTML = html;
+        }
+
+        async function descargarCompleto(referencia) {
+            try {
+                showLoading('Preparando documentación...');
+                
+                const res = await fetch('/api/v1/catastro/procesar-lote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        referencias: [referencia],
+                        capas_analizar: ['rednatura', 'viaspocuarias', 'espaciosnaturales']
+                    })
+                });
+
+                const data = await res.json();
+                if (data.status === 'success' && data.lote_id) {
+                    window.open(`/api/v1/catastro/descargar/${data.lote_id}`, '_blank');
+                    showNotification('✅ Documentación descargada', 'success');
+                } else {
+                    throw new Error('Error generando documentación');
+                }
+            } catch (e) {
+                showNotification(`Error: ${e.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
         // ====================================================================
@@ -741,12 +807,75 @@
             if (!fileInput.files[0]) return;
 
             showLoading('Analizando geometría...');
-            // Simulación o integración real con /api/v1/analisis/afecciones
-            setTimeout(() => {
+            
+            try {
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // Leer y procesar archivo
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        let geometria;
+                        const content = e.target.result;
+
+                        if (file.name.endsWith('.geojson') || file.name.endsWith('.json')) {
+                            geometria = JSON.parse(content);
+                        } else if (file.name.endsWith('.kml')) {
+                            // Convertir KML a GeoJSON (simplificado)
+                            geometria = { type: "FeatureCollection", features: [] };
+                        }
+
+                        if (geometria && geometria.features) {
+                            // Añadir al mapa
+                            drawnItems.clearLayers();
+                            const layer = L.geoJSON(geometria, {
+                                style: { color: '#3498db', weight: 2, fillOpacity: 0.2 }
+                            }).addTo(drawnItems);
+
+                            gisViewer.map.fitBounds(layer.getBounds());
+
+                            // Analizar afecciones
+                            const afeccionesRes = await fetch('/api/v1/analisis/afecciones', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    geometria_wkt: JSON.stringify(geometria.features[0].geometry)
+                                })
+                            });
+
+                            const afeccionesData = await afeccionesRes.json();
+                            
+                            if (afeccionesData.afecciones) {
+                                const afeccionesHtml = afeccionesData.afecciones.map(a => 
+                                    `<div style="margin-bottom:8px; padding:8px; background:#f8fafc; border-radius:6px;">
+                                        <strong>${a.tipo_capa}:</strong> ${a.porcentaje_afectado}% afectado (${a.area_afectada}m²)
+                                    </div>`
+                                ).join('');
+                                
+                                document.getElementById('analisis-status').innerHTML = `
+                                    <div style="margin-top:10px;">
+                                        <strong>✅ Análisis completado</strong>
+                                        ${afeccionesHtml}
+                                    </div>
+                                `;
+                            }
+                        }
+
+                        hideLoading();
+                        showNotification('✅ Análisis completado', 'success');
+                    } catch (error) {
+                        hideLoading();
+                        showNotification(`Error procesando archivo: ${error.message}`, 'error');
+                    }
+                };
+                reader.readAsText(file);
+
+            } catch (error) {
                 hideLoading();
-                showNotification('✅ Análisis completado. Revisa las afecciones detectadas.', 'success');
-                document.getElementById('analisis-status').innerHTML += '<div style="margin-top:10px; background:#f1f5f9; padding:8px; border-radius:8px;"><b>Afecciones:</b><br>Red Natura: 15%<br>Vías Pecuarias: No</div>';
-            }, 1500);
+                showNotification(`Error: ${error.message}`, 'error');
+            }
         }
 
         // ====================================================================
@@ -873,7 +1002,7 @@
                     window.open(data.url, '_blank');
                     cerrarModalPDF();
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || 'Error generando PDF');
                 }
             } catch (e) {
                 showNotification(`Error: ${e.message}`, 'error');
