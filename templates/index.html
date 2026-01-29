@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GIS Platform - Portal Principal</title>
+    <title>GIS Platform - Portal Principal v2.0</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -211,8 +214,21 @@
     </main>
 
     <script>
+        // Forzar recarga - Versión 2026-01-29-19-45
+        console.log('🚀 Portal GIS v2.0 - Cache Busting Activado');
+        
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('✅ Portal GIS cargado correctamente');
+            console.log('✅ Portal GIS cargado correctamente - Versión nueva');
+            // Limpiar cualquier caché residual
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        if (name.includes('visor') || name.includes('gis')) {
+                            caches.delete(name);
+                        }
+                    });
+                });
+            }
         });
     </script>
 </body>
