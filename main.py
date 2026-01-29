@@ -64,8 +64,8 @@ POSTGIS_CONFIG = {
 try:
     data_manager = DataSourceManager(
         postgis_config=POSTGIS_CONFIG,
-        gpkg_dir="capas/gpkg",
-        fgb_dir="capas/fgb"
+        gpkg_dir="/app/capas/gpkg",
+        fgb_dir="/app/capas/fgb"
     )
     logger.info("✅ Data Manager inicializado")
     
@@ -935,26 +935,31 @@ async def descargar_lote_catastro(lote_id: str):
 
 # Servir archivos estáticos
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/capas", StaticFiles(directory="capas"), name="capas")
+app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
+    """Página principal del visor GIS"""
     return FileResponse('templates/index.html')
 
 @app.get("/visor.html")
 async def read_visor():
+    """Visor interactivo de mapas"""
     return FileResponse('templates/index.html')
 
 @app.get("/index.html")
 async def read_index_html():
+    """Página de inicio del sistema"""
     return FileResponse('templates/index.html')
 
 @app.get("/catastro.html")
 async def read_catastro():
+    """Módulo de consulta catastral"""
     return FileResponse('templates/catastro.html')
 
 @app.get("/analisis.html")
 async def read_analisis():
+    """Herramientas de análisis geográfico"""
     return FileResponse('templates/analisis.html')
 
 @app.on_event("startup")
