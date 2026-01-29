@@ -419,12 +419,12 @@ class GISViewer {
      * Mostrar loading
      */
     showLoading(message) {
-        const loading = document.getElementById('loading');
+        const loading = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
 
         if (loading && loadingText) {
             loadingText.textContent = message;
-            loading.style.display = 'block';
+            loading.style.display = 'flex';
         }
     }
 
@@ -432,7 +432,7 @@ class GISViewer {
      * Ocultar loading
      */
     hideLoading() {
-        const loading = document.getElementById('loading');
+        const loading = document.getElementById('loading-overlay');
         if (loading) {
             loading.style.display = 'none';
         }

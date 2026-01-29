@@ -848,6 +848,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/flatgeobuf@3.27.2/dist/flatgeobuf-geojson.min.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="/static/js/viewer.js"></script>
 
     <script>
         // ====================================================================
@@ -865,14 +866,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Inicializando GIS Platform v3.0...');
 
-            // Inicializar el Visor GIS Avanzado (desde viewer.js)
-            window.gisViewer = new GISViewer('map');
+            // Usar el motor GIS avanzado (viewer.js)
+            gisViewer = new GISViewer('map');
 
             initTabs();
             initDrawControls();
         });
 
-        // initMap y initViewer ahora se delegan a GISViewer
+        // initMap e initViewer se delegan a GISViewer (viewer.js)
 
         // ====================================================================
         // SISTEMA DE TABS
@@ -885,7 +886,7 @@
 
         function switchTab(tabName) {
             currentTab = tabName;
-            const map = window.gisViewer.map;
+            const mapInstance = gisViewer.map;
 
             // Actualizar tabs
             document.querySelectorAll('.nav-tab').forEach(t => {
@@ -919,9 +920,9 @@
 
             // Activar/desactivar controles de dibujo
             if (tabName === 'analisis') {
-                if (drawControl) map.addControl(drawControl);
+                if (drawControl) mapInstance.addControl(drawControl);
             } else {
-                if (drawControl) map.removeControl(drawControl);
+                if (drawControl) mapInstance.removeControl(drawControl);
             }
 
             console.log(`✅ Cambiado a tab: ${tabName}`);
@@ -931,7 +932,9 @@
         // CONTROLES DE DIBUJO
         // ====================================================================
         function initDrawControls() {
-            const map = window.gisViewer.map; // Usar el mapa del visor
+            const mapInstance = gisViewer.map;
+            drawnItems = new L.FeatureGroup();
+            mapInstance.addLayer(drawnItems);
 
             drawControl = new L.Control.Draw({
                 draw: {
@@ -945,7 +948,7 @@
                 edit: { featureGroup: drawnItems }
             });
 
-            map.on(L.Draw.Event.CREATED, (event) => {
+            mapInstance.on(L.Draw.Event.CREATED, (event) => {
                 drawnItems.clearLayers();
                 drawnItems.addLayer(event.layer);
 
