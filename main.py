@@ -104,9 +104,9 @@ async def health_check():
 async def sync_check():
     return {
         "status": "synchronized",
-        "timestamp": "2026-01-29T05:15:00",
-        "serving_file": "index_v2.html",
-        "message": "Si puedes ver esto, el código del backend ESTÁ actualizado."
+        "timestamp": "2026-01-29T06:05:00",
+        "serving_file": "index.html",
+        "message": "Si puedes ver esto, el código del backend ESTÁ actualizado a v3.0 Premium."
     }
 
 @app.get("/api/v1/capas/fgb")
