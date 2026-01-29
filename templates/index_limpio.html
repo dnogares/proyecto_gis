@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIS Platform - Portal Principal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --bg-body: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border: #e9ecef;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-main);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .main-container {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .welcome-section h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .welcome-section p {
+            font-size: 20px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .module-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .module-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .module-description {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .module-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .module-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .featured {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .featured .module-title,
+        .featured .module-description {
+            color: white;
+        }
+
+        .featured .module-btn {
+            background: white;
+            color: var(--primary);
+        }
+
+        .featured .module-btn:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                🗺️ GIS Platform
+            </div>
+            <div style="color: var(--text-muted); font-size: 14px;">
+                Plataforma de Análisis Geográfico
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="welcome-section">
+            <h1>Plataforma GIS Profesional</h1>
+            <p>Herramientas avanzadas para análisis geográfico y catastral</p>
+        </section>
+
+        <div class="modules-grid">
+            <div class="module-card featured">
+                <span class="module-icon">🏠</span>
+                <h2 class="module-title">Visor Catastral</h2>
+                <p class="module-description">Visor interactivo completo con herramientas de análisis catastral, gestión de referencias y visualización de capas.</p>
+                <a href="/visor_catastral.html" class="module-btn">Abrir Visor</a>
+            </div>
+
+            <div class="module-card">
+                <span class="module-icon">🗺️</span>
+                <h2 class="module-title">Visor GIS</h2>
+                <p class="module-description">Mapa interactivo con herramientas de dibujo, medición y análisis geográfico avanzado.</p>
+                <a href="/visor.html" class="module-btn">Abrir Visor</a>
+            </div>
+
+            <div class="module-card">
+                <span class="module-icon">📊</span>
+                <h2 class="module-title">Análisis</h2>
+                <p class="module-description">Herramientas de análisis espacial, estadísticas y procesamiento de datos geográficos.</p>
+                <a href="/analisis.html" class="module-btn">Ir a Análisis</a>
+            </div>
+
+            <div class="module-card">
+                <span class="module-icon">🏘️</span>
+                <h2 class="module-title">Catastro</h2>
+                <p class="module-description">Consulta y análisis de información catastral con herramientas especializadas.</p>
+                <a href="/catastro.html" class="module-btn">Ir a Catastro</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ Portal GIS cargado correctamente');
+        });
+    </script>
+</body>
+</html>
