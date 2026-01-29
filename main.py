@@ -962,6 +962,11 @@ async def read_analisis():
     """Herramientas de análisis geográfico"""
     return FileResponse('templates/analisis.html')
 
+@app.get("/visor_catastral.html")
+async def read_visor_catastral():
+    """Visor catastral avanzado con herramientas de análisis"""
+    return FileResponse('templates/visor_catastral.html')
+
 @app.on_event("startup")
 async def startup_event():
     """Inicialización al arrancar"""
