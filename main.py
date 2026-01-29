@@ -939,8 +939,8 @@ app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    """Página principal del visor GIS"""
-    return FileResponse('templates/index.html')
+    """Página principal del visor catastral"""
+    return FileResponse('templates/visor_catastral.html')
 
 @app.get("/visor.html")
 async def read_visor():
