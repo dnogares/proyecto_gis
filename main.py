@@ -850,7 +850,7 @@ if __name__ == "__main__":
 
     # Configuración desde variables de entorno
     HOST = os.getenv("HOST", "0.0.0.0")
-    PORT = int(os.getenv("PORT", "8000"))
+    PORT = int(os.getenv("PORT", "80"))
     LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
     DEBUG = os.getenv("DEBUG", "false").lower() in ("1", "true", "yes")
     
