@@ -113,11 +113,11 @@ async def sync_check():
         "status": "synchronized",
         "timestamp": now.strftime("%Y-%m-%dT%H:%M:%S"),
         "cache_bust": CACHE_BUST,
-        "main_page": "Visor Catastral Simple",
+        "main_page": "Portal Limpio (index_limpio.html)",
         "routes": {
-            "/": "templates/visor_catastral_simple.html (Visor Simple)",
-            "/visor_catastral.html": "templates/visor_catastral_simple.html (Visor Simple)",
-            "/index.html": "templates/visor_catastral_simple.html (Visor Simple)",
+            "/": "templates/index_limpio.html (Portal Limpio)",
+            "/visor_catastral.html": "templates/index_limpio.html (Portal Limpio)",
+            "/index.html": "templates/index_limpio.html (Portal Limpio)",
             "/catastro.html": "templates/catastro.html",
             "/analisis.html": "templates/analisis.html"
         },
@@ -127,14 +127,14 @@ async def sync_check():
             "/capas": "/app/capas"
         },
         "scripts_order": {
-            "visor_catastral_simple.html": [
+            "index_limpio.html": [
                 "leaflet.css",
                 "leaflet.js",
-                "custom_simple_code"
+                "basic_portal_code"
             ]
         },
-        "message": "� VERSIÓN SIMPLE ACTIVADA - Visor Catastral básico funcional",
-        "version": "3.0-SIMPLE-" + str(int(now.timestamp()))
+        "message": "🏠 PORTAL LIMPIO ACTIVADO - Página principal de acceso",
+        "version": "3.0-LIMPIO-" + str(int(now.timestamp()))
     }
 
 @app.get("/api/v1/force-update")
@@ -1026,23 +1026,23 @@ app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    """Página principal - Visor Catastral Simple"""
-    return FileResponse('templates/visor_catastral_simple.html')
+    """Página principal - Portal Limpio"""
+    return FileResponse('templates/index_limpio.html')
 
 @app.get("/visor.html")
 async def read_visor():
     """Visor interactivo de mapas"""
-    return FileResponse('templates/visor_catastral_simple.html')
+    return FileResponse('templates/index_limpio.html')
 
 @app.get("/index.html")
 async def read_index_html():
     """Página de inicio del sistema"""
-    return FileResponse('templates/visor_catastral_simple.html')
+    return FileResponse('templates/index_limpio.html')
 
 @app.get("/visor_catastral.html")
 async def read_visor_catastral():
     """Visor catastral avanzado"""
-    return FileResponse('templates/visor_catastral_simple.html')
+    return FileResponse('templates/index_limpio.html')
 
 @app.get("/catastro.html")
 async def read_catastro():
