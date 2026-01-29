@@ -109,21 +109,74 @@ async def health_check():
 async def sync_check():
     return {
         "status": "synchronized",
-        "timestamp": "2026-01-29T19:41:00",
+        "timestamp": "2026-01-29T19:55:00",
         "cache_bust": CACHE_BUST,
-        "serving_file": "index.html",
+        "main_page": "Visor Catastral (index.html)",
         "routes": {
-            "/": "templates/index.html",
-            "/visor_catastral.html": "templates/visor_catastral.html",
-            "/index.html": "templates/index.html"
+            "/": "templates/index.html (Visor Catastral)",
+            "/visor_catastral.html": "templates/index.html (Visor Catastral)",
+            "/index.html": "templates/index.html (Visor Catastral)",
+            "/catastro.html": "templates/catastro.html",
+            "/analisis.html": "templates/analisis.html"
         },
         "static_mounts": {
             "/static": "static",
             "/templates": "templates",
             "/capas": "/app/capas"
         },
-        "message": "✅ Configuración actualizada - Portal principal + Visor catastral accesible"
+        "scripts_order": {
+            "index.html": [
+                "leaflet.css",
+                "flatgeobuf-geojson.min.js", 
+                "leaflet.js",
+                "leaflet.draw.js",
+                "leaflet.geometryutil.min.js",
+                "custom_map_code"
+            ]
+        },
+        "message": "✅ SOLUCIÓN FINAL - Visor Catastral como página principal con orden correcto de scripts"
     }
+
+@app.post("/api/v1/analisis/interseccion")
+async def analisis_interseccion(request: Request):
+    """
+    Endpoint para análisis de intersección de geometrías con capas de afecciones
+    """
+    try:
+        data = await request.json()
+        geometria = data.get("geometria")
+        capas = data.get("capas", ["montes", "urbanismo", "proteccion_ambiental"])
+        
+        logger.info(f"🔍 Analizando intersección con capas: {capas}")
+        
+        # Aquí iría la lógica real de análisis con PostGIS
+        # Por ahora, simulamos resultados para testing
+        afecciones_simuladas = [
+            {
+                "capa": "urbanismo",
+                "nivel": "ALTO",
+                "area_afectada_m2": 1250.50,
+                "descripcion": "La parcela intersecta con zona urbana consolidada según el PGOU"
+            },
+            {
+                "capa": "proteccion_ambiental", 
+                "nivel": "MEDIO",
+                "area_afectada_m2": 450.25,
+                "descripcion": "Parcialmente dentro de zona de protección ambiental"
+            }
+        ] if geometria else []
+        
+        return {
+            "status": "success",
+            "geometria_recibida": geometria,
+            "afecciones": afecciones_simuladas,
+            "total_afectaciones": len(afecciones_simuladas),
+            "timestamp": "2026-01-29T19:55:00"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error en análisis de intersección: {e}")
+        raise HTTPException(500, f"Error en análisis: {str(e)}")
 
 @app.get("/api/v1/capas/fgb")
 async def listar_capas_fgb():
@@ -956,7 +1009,7 @@ app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    """Página principal del portal"""
+    """Página principal - Visor Catastral"""
     return FileResponse('templates/index.html')
 
 @app.get("/visor.html")
@@ -972,7 +1025,7 @@ async def read_index_html():
 @app.get("/visor_catastral.html")
 async def read_visor_catastral():
     """Visor catastral avanzado"""
-    return FileResponse('templates/visor_catastral.html')
+    return FileResponse('templates/index.html')
 
 @app.get("/catastro.html")
 async def read_catastro():
