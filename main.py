@@ -817,7 +817,7 @@ app.mount("/capas", StaticFiles(directory="capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    return FileResponse('templates/visor.html')
+    return FileResponse('templates/index.html')
 
 @app.get("/catastro.html")
 async def read_catastro():
