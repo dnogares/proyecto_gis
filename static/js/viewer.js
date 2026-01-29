@@ -18,8 +18,7 @@ class GISViewer {
             viaspocuarias: '#F57C00',
             espaciosnaturales: '#1976D2',
             masasagua: '#0288D1',
-            zonasinundables: '#F44336',
-            test_capa: '#9C27B0'
+            zonasinundables: '#F44336'
         };
         
         this.layerNames = {
@@ -27,8 +26,7 @@ class GISViewer {
             viaspocuarias: 'Vías Pecuarias',
             espaciosnaturales: 'Espacios Naturales',
             masasagua: 'Masas de Agua',
-            zonasinundables: 'Zonas Inundables',
-            test_capa: 'Capa de Prueba'
+            zonasinundables: 'Zonas Inundables'
         };
         
         // Estado de capas FGB disponibles
@@ -52,7 +50,7 @@ class GISViewer {
      * Inicializar mapa base Leaflet
      */
     initMap() {
-        // Crear mapa centrado en Madrid (donde está test_capa)
+        // Crear mapa
         this.map = L.map(this.mapId, {
             center: [40.4167, -3.7033],
             zoom: 13,
@@ -149,7 +147,8 @@ class GISViewer {
         ];
         
         // Combinar capas por defecto con capas detectadas
-        const todasCapas = [...new Set([...capasDefecto, ...this.fgbCapas.map(c => c.nombre)])];
+        const fgbNombres = Array.isArray(this.fgbCapas) ? this.fgbCapas.map(c => c.nombre).filter(Boolean) : [];
+        const todasCapas = [...new Set([...capasDefecto, ...fgbNombres])];
 
         todasCapas.forEach(nombre => {
             const div = document.createElement('div');
