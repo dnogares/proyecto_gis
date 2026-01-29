@@ -98,7 +98,16 @@ except Exception as e:
 # Health Check Endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": "2.5.0-SYNC-CHECK"}
+
+@app.get("/api/v1/debug/sync-check")
+async def sync_check():
+    return {
+        "status": "synchronized",
+        "timestamp": "2026-01-29T05:15:00",
+        "serving_file": "index_v2.html",
+        "message": "Si puedes ver esto, el código del backend ESTÁ actualizado."
+    }
 
 @app.get("/api/v1/capas/fgb")
 async def listar_capas_fgb():
