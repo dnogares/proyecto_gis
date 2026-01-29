@@ -939,8 +939,8 @@ app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    """Página principal del visor catastral"""
-    return FileResponse('templates/visor_catastral.html')
+    """Página principal del portal"""
+    return FileResponse('templates/index.html')
 
 @app.get("/visor.html")
 async def read_visor():
@@ -951,6 +951,11 @@ async def read_visor():
 async def read_index_html():
     """Página de inicio del sistema"""
     return FileResponse('templates/index.html')
+
+@app.get("/visor_catastral.html")
+async def read_visor_catastral():
+    """Visor catastral avanzado"""
+    return FileResponse('templates/visor_catastral.html')
 
 @app.get("/catastro.html")
 async def read_catastro():
