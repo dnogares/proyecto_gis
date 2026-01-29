@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from typing import Optional, List, Dict
+import os
 import logging
 
 from services.data_source_manager import DataSourceManager
@@ -24,6 +25,10 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
+
+# Variable de entorno para cache busting
+CACHE_BUST = os.getenv("CACHE_BUST", "0")
 logger = logging.getLogger(__name__)
 
 # Inicializar FastAPI
@@ -104,9 +109,20 @@ async def health_check():
 async def sync_check():
     return {
         "status": "synchronized",
-        "timestamp": "2026-01-29T06:05:00",
+        "timestamp": "2026-01-29T19:41:00",
+        "cache_bust": CACHE_BUST,
         "serving_file": "index.html",
-        "message": "Si puedes ver esto, el código del backend ESTÁ actualizado a v3.0 Premium."
+        "routes": {
+            "/": "templates/index.html",
+            "/visor_catastral.html": "templates/visor_catastral.html",
+            "/index.html": "templates/index.html"
+        },
+        "static_mounts": {
+            "/static": "static",
+            "/templates": "templates",
+            "/capas": "/app/capas"
+        },
+        "message": "✅ Configuración actualizada - Portal principal + Visor catastral accesible"
     }
 
 @app.get("/api/v1/capas/fgb")
@@ -935,6 +951,7 @@ async def descargar_lote_catastro(lote_id: str):
 
 # Servir archivos estáticos
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
