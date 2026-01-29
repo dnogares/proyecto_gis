@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor Catastral</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .controls input {
+      margin: 5px;
+      padding: 5px;
+      width: 200px;
+    }
+    .controls button {
+      margin: 5px;
+      padding: 5px 10px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h3>🏠 Visor Catastral</h3>
+    <div>
+      <input type="text" id="refInput" placeholder="Referencia catastral" />
+      <button onclick="cargarReferencia()">Cargar</button>
+    </div>
+    <div>
+      <button onclick="cargarCapas()">🔄 Cargar Capas</button>
+    </div>
+    <div id="capasList"></div>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let map = null;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      map = L.map('map').setView([40.0, -3.7], 6);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+      
+      // Catastro WMS
+      L.tileLayer.wms('https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx', {
+        layers: 'CP.CadastralParcel',
+        format: 'image/png',
+        transparent: true,
+        opacity: 0.8
+      }).addTo(map);
+      
+      console.log('✅ Visor catastral cargado');
+    });
+
+    async function cargarReferencia() {
+      const ref = document.getElementById('refInput').value.trim();
+      if (!ref) {
+        alert('Introduce una referencia catastral');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
+        if (!response.ok) {
+          alert('Referencia no encontrada');
+          return;
+        }
+        
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          L.geoJSON(data.features[0], {
+            style: { color: '#ef4444', weight: 3, fillOpacity: 0.06 }
+          }).addTo(map);
+          map.fitBounds(L.geoJSON(data.features[0]).getBounds());
+          alert(`✅ Referencia cargada: ${ref}`);
+        }
+      } catch (e) {
+        console.error('Error:', e);
+        alert('Error cargando referencia');
+      }
+    }
+
+    async function cargarCapas() {
+      try {
+        const response = await fetch('/api/v1/capas/fgb');
+        const data = await response.json();
+        const container = document.getElementById('capasList');
+        container.innerHTML = '<strong>Capas disponibles:</strong><br>';
+        
+        if (data.capas && data.capas.length > 0) {
+          data.capas.forEach(capa => {
+            const btn = document.createElement('button');
+            btn.textContent = capa.nombre;
+            btn.style.margin = '2px';
+            btn.style.fontSize = '12px';
+            btn.onclick = () => cargarCapaIndividual(capa.url);
+            container.appendChild(btn);
+            container.appendChild(document.createElement('br'));
+          });
+        } else {
+          container.innerHTML += 'No hay capas disponibles';
+        }
+      } catch (e) {
+        console.error('Error:', e);
+        alert('Error cargando capas');
+      }
+    }
+
+    async function cargarCapaIndividual(url) {
+      try {
+        const response = await fetch(url);
+        const geojson = await response.json();
+        L.geoJSON(geojson, {
+          style: { color: '#3b82f6', weight: 2, fillOpacity: 0.3 }
+        }).addTo(map);
+      } catch (e) {
+        console.error('Error:', e);
+        alert('Error cargando capa');
+      }
+    }
+  </script>
+</body>
+</html>
