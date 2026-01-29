@@ -267,60 +267,59 @@
             color: #333;
         }
 
-        /* Navegación Principal */
-        .main-nav {
-            position: fixed;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 8px 20px;
-            border-radius: 50px;
+        /* Barra de Navegación */
+        .navbar {
+            background: white;
+            height: 60px;
             display: flex;
-            gap: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 2000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
         }
 
-        .nav-link {
+        .navbar a {
             text-decoration: none;
-            color: #333;
-            font-size: 14px;
+            color: #555;
             font-weight: 600;
-            padding: 6px 15px;
-            border-radius: 20px;
-            transition: all 0.3s ease;
+            font-size: 15px;
+            padding: 8px 20px;
+            border-radius: 30px;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .nav-link:hover {
-            background: rgba(33, 150, 243, 0.1);
+        .navbar a:hover {
+            background: rgba(33, 150, 243, 0.08);
             color: #2196F3;
         }
 
-        .nav-link.active {
+        .navbar a.active {
             background: #2196F3;
             color: white;
-            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
         }
 
         .sidebar,
         .map-container {
-            padding-top: 60px !important;
+            padding-top: 80px !important;
         }
     </style>
 </head>
 
 <body>
     <!-- Navegación -->
-    <nav class="main-nav">
-        <a href="/" class="nav-link">🌍 Visor GIS</a>
-        <a href="/catastro.html" class="nav-link">📄 Catastro</a>
-        <a href="/analisis.html" class="nav-link active">🔍 Análisis</a>
+    <nav class="navbar">
+        <a href="/">🌍 Visor GIS</a>
+        <a href="/catastro.html">📄 Catastro</a>
+        <a href="/analisis.html" class="active">🔍 Análisis</a>
     </nav>
 
     <div class="sidebar">
