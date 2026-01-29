@@ -941,6 +941,14 @@ app.mount("/capas", StaticFiles(directory="capas"), name="capas")
 async def read_index():
     return FileResponse('templates/index.html')
 
+@app.get("/visor.html")
+async def read_visor():
+    return FileResponse('templates/index.html')
+
+@app.get("/index.html")
+async def read_index_html():
+    return FileResponse('templates/index.html')
+
 @app.get("/catastro.html")
 async def read_catastro():
     return FileResponse('templates/catastro.html')
