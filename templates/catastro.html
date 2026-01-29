@@ -15,7 +15,37 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
+            padding: 60px 20px 20px 20px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .navbar a:hover {
+            color: #2196F3;
+        }
+
+        .navbar a.active {
+            color: #2196F3;
         }
         
         .container {
@@ -272,6 +302,12 @@
     </style>
 </head>
 <body>
+    <div class="navbar">
+        <a href="/">🗺️ Visor</a>
+        <a href="/catastro" class="active">🏠 Catastro</a>
+        <a href="/analisis">📊 Análisis</a>
+    </div>
+
     <div class="container">
         <h1>📄 Descarga de Documentación Catastral</h1>
         <p class="subtitle">Sistema completo de descarga y procesamiento de datos del Catastro</p>
@@ -399,13 +435,14 @@
             document.getElementById('loading-text').textContent = 'Descargando documentación...';
             
             try {
-                const response = await fetch('/api/v1/catastro/descargar', {
+                // El endpoint en main.py para procesar es /api/v1/catastro/procesar-lote
+                // pero necesitamos uno individual o usar el de lote con una sola RC
+                const response = await fetch('/api/v1/catastro/procesar-lote', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        referencia: referencia,
-                        descargar_afecciones: afecciones,
-                        crear_zip: crear_zip
+                        referencias: [referencia],
+                        capas_analizar: afecciones ? null : []
                     })
                 });
                 
@@ -449,12 +486,12 @@
                 `Procesando ${referencias.length} referencias...`;
             
             try {
-                const response = await fetch('/api/v1/catastro/descargar-lote', {
+                const response = await fetch('/api/v1/catastro/procesar-lote', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         referencias: referencias,
-                        descargar_afecciones: afecciones
+                        capas_analizar: afecciones ? null : []
                     })
                 });
                 
@@ -489,9 +526,8 @@
                         html += `<p><strong>Coordenadas:</strong> ${data.coordenadas.lat.toFixed(6)}°, ${data.coordenadas.lon.toFixed(6)}°</p>`;
                     }
                     
-                    if (data.zip_path) {
-                        const zipName = data.zip_path.split('/').pop();
-                        html += `<a href="/descargas/${zipName}" class="download-btn" download>📦 Descargar ZIP Completo</a>`;
+                    if (data.lote_id) {
+                        html += `<a href="/api/v1/catastro/descargar/${data.lote_id}" class="download-btn" download>📦 Descargar ZIP Completo</a>`;
                     }
                     
                     html += '</div>';
@@ -506,9 +542,8 @@
                     html += `<h3>📦 Lote de ${data.total_referencias} referencias</h3>`;
                     html += `<p><strong>Tamaño ZIP:</strong> ${data.zip_size_mb} MB</p>`;
                     
-                    if (data.zip_path) {
-                        const zipName = data.zip_path.split('/').pop();
-                        html += `<a href="/descargas/${zipName}" class="download-btn" download>📦 Descargar ZIP de Lote</a>`;
+                    if (data.lote_id) {
+                        html += `<a href="/api/v1/catastro/descargar/${data.lote_id}" class="download-btn" download>📦 Descargar ZIP de Lote</a>`;
                     }
                     
                     html += '</div>';

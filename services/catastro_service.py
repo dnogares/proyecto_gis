@@ -22,6 +22,8 @@ import json
 import logging
 import requests
 import xml.etree.ElementTree as ET
+import shutil
+import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
@@ -572,13 +574,32 @@ class CatastroCompleteService:
         lote_dir = self.output_dir / lote_id
         lote_dir.mkdir(exist_ok=True)
         
+        # Mover archivos individuales de cada RC al directorio del lote
+        for r in resultados:
+            if r.get('exitoso') and 'geometria' in r and 'archivos' in r['geometria']:
+                for fmt, path_str in r['geometria']['archivos'].items():
+                    src_path = Path(path_str)
+                    if src_path.exists():
+                        dest_path = lote_dir / src_path.name
+                        shutil.copy2(src_path, dest_path)
+
         archivos = self._generar_archivos_lote(lote_id, resultados, validacion)
         
-        # 4. Resumen
+        # 4. Crear archivo ZIP
+        zip_path = self.output_dir / f"{lote_id}.zip"
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(lote_dir):
+                for file in files:
+                    file_path = Path(root) / file
+                    zipf.write(file_path, file_path.relative_to(lote_dir))
+
+        # 5. Resumen
         exitosas = sum(1 for r in resultados if r.get('exitoso', False))
+        zip_size_mb = round(zip_path.stat().st_size / (1024 * 1024), 2)
         
         return {
             "lote_id": lote_id,
+            "zip_size_mb": zip_size_mb,
             "total_referencias": len(referencias),
             "num_validas": len(refs_validas),
             "num_invalidas": validacion['num_invalidas'],
@@ -809,8 +830,9 @@ class CatastroCompleteService:
             datos = self.obtener_datos_parcela(ref)
             resultado['datos'] = datos
             
-            # 2. Geometría
-            geometria = self.obtener_geometria(ref, formatos=['geojson'])
+            # 2. Geometría (descargar todos los formatos útiles)
+            formatos = ['geojson', 'gml', 'kml', 'xlsx', 'txt', 'png']
+            geometria = self.obtener_geometria(ref, formatos=formatos)
             resultado['geometria'] = geometria
             
             # 3. Afecciones
