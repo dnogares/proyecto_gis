@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 VISOR GIS V2.5 - ACTUALIZADO</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            overflow: hidden;
+            background: #f0f2f5;
+        }
+
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .main-nav {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            background: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .nav-link.active {
+            background: #2196F3;
+            color: white;
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 40px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="main-nav">
+        <a href="/" class="nav-link active">🌍 Visor</a>
+        <a href="/catastro.html" class="nav-link">📄 Catastro</a>
+        <a href="/analisis.html" class="nav-link">🔍 Análisis</a>
+    </nav>
+    <div id="map"></div>
+    <div class="info-panel">
+        <h3>🚀 VERSIÓN 2.5 - DEPLOY EXITOSO</h3>
+        <p>Si ves esto, el sistema se está actualizando correctamente.</p>
+    </div>
+    <script>alert("¡SISTEMA ACTUALIZADO V2.5!");</script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/flatgeobuf@3.27.2/dist/flatgeobuf-geojson.min.js"></script>
+    <script src="/static/js/viewer.js?v=2.5"></script>
+</body>
+
+</html>
