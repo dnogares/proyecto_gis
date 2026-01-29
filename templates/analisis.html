@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análisis de Afecciones - GIS Tool</title>
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-    
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             height: 100vh;
         }
-        
+
         .sidebar {
             width: 400px;
             background: #f5f5f5;
@@ -29,33 +30,33 @@
             overflow-y: auto;
             border-right: 1px solid #ddd;
         }
-        
+
         .map-container {
             flex: 1;
             position: relative;
         }
-        
+
         #map {
             width: 100%;
             height: 100%;
         }
-        
+
         h1 {
             font-size: 20px;
             margin-bottom: 20px;
             color: #333;
         }
-        
+
         h2 {
             font-size: 16px;
             margin: 20px 0 10px 0;
             color: #555;
         }
-        
+
         .input-group {
             margin-bottom: 15px;
         }
-        
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -63,7 +64,7 @@
             font-size: 13px;
             color: #555;
         }
-        
+
         input[type="text"],
         textarea {
             width: 100%;
@@ -73,14 +74,14 @@
             font-size: 14px;
             font-family: inherit;
         }
-        
+
         textarea {
             min-height: 100px;
             resize: vertical;
             font-family: 'Courier New', monospace;
             font-size: 12px;
         }
-        
+
         button {
             width: 100%;
             padding: 12px;
@@ -93,26 +94,26 @@
             cursor: pointer;
             margin-bottom: 10px;
         }
-        
+
         button:hover {
             background: #1976D2;
         }
-        
+
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
-        
+
         button.secondary {
             background: #fff;
             color: #2196F3;
             border: 1px solid #2196F3;
         }
-        
+
         button.secondary:hover {
             background: #f0f0f0;
         }
-        
+
         #resultados {
             margin-top: 20px;
             padding: 15px;
@@ -121,40 +122,40 @@
             border: 1px solid #ddd;
             display: none;
         }
-        
+
         .afeccion {
             margin: 10px 0;
             padding: 10px;
             border-left: 4px solid #ccc;
             background: #f9f9f9;
         }
-        
+
         .afeccion.critico {
             border-left-color: #F44336;
             background: #FFEBEE;
         }
-        
+
         .afeccion.alto {
             border-left-color: #FF9800;
             background: #FFF3E0;
         }
-        
+
         .afeccion.medio {
             border-left-color: #FFC107;
             background: #FFFDE7;
         }
-        
+
         .afeccion h3 {
             font-size: 14px;
             margin-bottom: 5px;
         }
-        
+
         .afeccion p {
             font-size: 12px;
             margin: 3px 0;
             color: #666;
         }
-        
+
         .badge {
             display: inline-block;
             padding: 3px 8px;
@@ -163,73 +164,75 @@
             font-weight: bold;
             margin-left: 5px;
         }
-        
+
         .badge-critico {
             background: #F44336;
             color: white;
         }
-        
+
         .badge-alto {
             background: #FF9800;
             color: white;
         }
-        
+
         .badge-medio {
             background: #FFC107;
             color: black;
         }
-        
+
         .badge-ninguno {
             background: #4CAF50;
             color: white;
         }
-        
+
         .loading {
             text-align: center;
             padding: 20px;
             color: #666;
         }
-        
+
         .spinner {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(0,0,0,.1);
+            border: 3px solid rgba(0, 0, 0, .1);
             border-radius: 50%;
             border-top-color: #2196F3;
             animation: spin 1s ease-in-out infinite;
             margin-right: 10px;
         }
-        
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .alert {
             padding: 12px;
             border-radius: 4px;
             margin-bottom: 15px;
             font-size: 13px;
         }
-        
+
         .alert-info {
             background: #E3F2FD;
             border: 1px solid #2196F3;
             color: #1565C0;
         }
-        
+
         .alert-success {
             background: #E8F5E9;
             border: 1px solid #4CAF50;
             color: #2E7D32;
         }
-        
+
         .alert-warning {
             background: #FFF3E0;
             border: 1px solid #FF9800;
             color: #E65100;
         }
-        
+
         .recomendacion {
             padding: 8px;
             margin: 5px 0;
@@ -237,92 +240,147 @@
             border-left: 3px solid #2196F3;
             font-size: 12px;
         }
-        
+
         .stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin: 15px 0;
         }
-        
+
         .stat {
             background: white;
             padding: 10px;
             border-radius: 4px;
             border: 1px solid #e0e0e0;
         }
-        
+
         .stat-label {
             font-size: 11px;
             color: #666;
             margin-bottom: 3px;
         }
-        
+
         .stat-value {
             font-size: 18px;
             font-weight: bold;
             color: #333;
         }
+
+        /* Navegación Principal */
+        .main-nav {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 50px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 15px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            background: rgba(33, 150, 243, 0.1);
+            color: #2196F3;
+        }
+
+        .nav-link.active {
+            background: #2196F3;
+            color: white;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        .sidebar,
+        .map-container {
+            padding-top: 60px !important;
+        }
     </style>
 </head>
+
 <body>
+    <!-- Navegación -->
+    <nav class="main-nav">
+        <a href="/" class="nav-link">🌍 Visor GIS</a>
+        <a href="/catastro.html" class="nav-link">📄 Catastro</a>
+        <a href="/analisis.html" class="nav-link active">🔍 Análisis</a>
+    </nav>
+
     <div class="sidebar">
         <h1>🔍 Análisis de Afecciones</h1>
-        
+
         <div class="alert alert-info">
-            <strong>Instrucciones:</strong> Dibuja una parcela en el mapa usando las herramientas de dibujo o introduce la geometría WKT manualmente.
+            <strong>Instrucciones:</strong> Dibuja una parcela en el mapa usando las herramientas de dibujo o introduce
+            la geometría WKT manualmente.
         </div>
-        
+
         <div class="input-group">
             <label for="referencia">Referencia Catastral (opcional)</label>
             <input type="text" id="referencia" placeholder="Ej: 1234567AB1234D">
         </div>
-        
+
         <div class="input-group">
             <label for="geometria">Geometría WKT</label>
             <textarea id="geometria" placeholder="POLYGON((...))" readonly></textarea>
         </div>
-        
+
         <button id="btnAnalizar">🔍 Analizar Afecciones</button>
         <button class="secondary" id="btnLimpiar">🗑️ Limpiar Mapa</button>
-        
+
         <div id="resultados"></div>
     </div>
-    
+
     <div class="map-container">
         <div id="map"></div>
     </div>
-    
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-    
+
     <script>
         // Inicializar mapa
         const map = L.map('map').setView([36.8381, -2.4597], 12);
-        
+
         // Capa base
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
-        
+
         // Satélite
         const satellite = L.tileLayer(
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             { attribution: 'Esri', maxZoom: 19 }
         );
-        
+
         // Control de capas
         L.control.layers({
             'Mapa': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
             'Satélite': satellite
         }).addTo(map);
-        
+
         // Capa para dibujos
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
-        
+
         // Control de dibujo
         const drawControl = new L.Control.Draw({
             draw: {
@@ -348,32 +406,32 @@
             }
         });
         map.addControl(drawControl);
-        
+
         // Variable para guardar geometría actual
         let currentGeometry = null;
-        
+
         // Evento al dibujar
         map.on(L.Draw.Event.CREATED, function (event) {
             const layer = event.layer;
-            
+
             // Limpiar dibujos anteriores
             drawnItems.clearLayers();
-            
+
             // Añadir nuevo dibujo
             drawnItems.addLayer(layer);
-            
+
             // Convertir a WKT
             const wkt = layerToWKT(layer);
             document.getElementById('geometria').value = wkt;
             currentGeometry = wkt;
-            
+
             console.log('Geometría dibujada:', wkt);
         });
-        
+
         // Convertir capa a WKT
         function layerToWKT(layer) {
             let coords;
-            
+
             if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
                 coords = layer.getLatLngs()[0].map(ll => `${ll.lng} ${ll.lat}`).join(', ');
                 // Cerrar el polígono
@@ -381,25 +439,25 @@
                 coords += `, ${first.lng} ${first.lat}`;
                 return `POLYGON((${coords}))`;
             }
-            
+
             return null;
         }
-        
+
         // Botón analizar
-        document.getElementById('btnAnalizar').addEventListener('click', async function() {
+        document.getElementById('btnAnalizar').addEventListener('click', async function () {
             const geometria = document.getElementById('geometria').value;
             const referencia = document.getElementById('referencia').value;
-            
+
             if (!geometria) {
                 alert('Por favor, dibuja una parcela en el mapa o introduce una geometría WKT');
                 return;
             }
-            
+
             // Mostrar loading
             const resultados = document.getElementById('resultados');
             resultados.style.display = 'block';
             resultados.innerHTML = '<div class="loading"><div class="spinner"></div>Analizando afecciones...</div>';
-            
+
             try {
                 const response = await fetch('/api/v1/analisis/afecciones', {
                     method: 'POST',
@@ -409,14 +467,14 @@
                         referencia_catastral: referencia || null
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 mostrarResultados(data);
-                
+
             } catch (error) {
                 console.error('Error:', error);
                 resultados.innerHTML = `
@@ -426,16 +484,16 @@
                 `;
             }
         });
-        
+
         // Mostrar resultados
         function mostrarResultados(data) {
             const resultados = document.getElementById('resultados');
-            
+
             let html = '';
-            
+
             // Encabezado
             html += '<h2>📊 Resultados del Análisis</h2>';
-            
+
             // Estadísticas
             html += '<div class="stats">';
             html += `
@@ -453,11 +511,11 @@
                 </div>
             `;
             html += '</div>';
-            
+
             // Afecciones
             if (data.tiene_afecciones) {
                 html += `<h2>⚠️ Afecciones Encontradas (${data.num_afecciones})</h2>`;
-                
+
                 data.afecciones.forEach(afeccion => {
                     const clase = afeccion.nivel.toLowerCase();
                     html += `
@@ -480,18 +538,18 @@
                     </div>
                 `;
             }
-            
+
             // Recomendaciones
             html += '<h2>💡 Recomendaciones</h2>';
             data.recomendaciones.forEach(rec => {
                 html += `<div class="recomendacion">${rec}</div>`;
             });
-            
+
             resultados.innerHTML = html;
         }
-        
+
         // Botón limpiar
-        document.getElementById('btnLimpiar').addEventListener('click', function() {
+        document.getElementById('btnLimpiar').addEventListener('click', function () {
             drawnItems.clearLayers();
             document.getElementById('geometria').value = '';
             document.getElementById('referencia').value = '';
@@ -500,4 +558,5 @@
         });
     </script>
 </body>
+
 </html>

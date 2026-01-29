@@ -810,6 +810,14 @@ app.mount("/capas", StaticFiles(directory="capas"), name="capas")
 async def read_index():
     return FileResponse('templates/index.html')
 
+@app.get("/catastro.html")
+async def read_catastro():
+    return FileResponse('templates/catastro.html')
+
+@app.get("/analisis.html")
+async def read_analisis():
+    return FileResponse('templates/analisis.html')
+
 @app.on_event("startup")
 async def startup_event():
     """Inicialización al arrancar"""
