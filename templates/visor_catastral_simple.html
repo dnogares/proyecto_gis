@@ -54,37 +54,229 @@
     </div>
     <div>
       <button onclick="cargarCapas()">🔄 Cargar Capas</button>
-    </div>
     <div id="capasList"></div>
   </div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
   <script>
     let map = null;
     
     document.addEventListener('DOMContentLoaded', () => {
       map = L.map('map').setView([40.0, -3.7], 6);
       
+      // Capa base minimalista (solo referencia)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+        attribution: ' OpenStreetMap',
+        maxZoom: 19,
+        opacity: 0.3  // Muy transparente para que resalten las capas locales
       }).addTo(map);
       
-      // Catastro WMS
-      L.tileLayer.wms('https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx', {
-        layers: 'CP.CadastralParcel',
-        format: 'image/png',
-        transparent: true,
-        opacity: 0.8
-      }).addTo(map);
-      
-      console.log('✅ Visor catastral cargado');
+      // Cargar capas locales automáticamente
+      cargarCapasLocales();
     });
-
+    
+    async function cargarCapasLocales() {
+      try {
+        const response = await fetch('/api/v1/capas/fgb');
+        const capas = await response.json();
+        
+        console.log('🗺️ Capas locales encontradas:', capas.length);
+        
+        // Definir categorías y capas específicas a buscar
+        const categoriasCapas = {
+          'Vías Pecuarias': ['pecuaria', 'via', 'ganadera', 'trashumancia'],
+          'Montes Públicos': ['monte', 'forestal', 'publico', 'demanio'],
+          'Red Natura 2000': ['rednatura', 'natura', 'rn2000', 'ps.rnatura'],
+          'Espacio Hidráulico Protegido': ['agua', 'rio', 'costa', 'hidraulico', 'embalse', 'cuenca'],
+          'Zonas Inundables': ['inundable', 'inundacion', 'avenida', 'riada'],
+          'Riesgo Sísmico': ['sismico', 'sismo', 'terremoto', 'seismic'],
+          'Riesgo Desertificación': ['desertificacion', 'desert', 'arido', 'erosion'],
+          'Riesgo Volcánico': ['volcan', 'volcanico', 'lava', 'ceniza'],
+          'Bienes de Interés Cultural': ['bic', 'cultural', 'patrimonio', 'monumento', 'historico'],
+          'IGN Base': ['ign', 'base', 'cartografia', 'mtn']
+        };
+        
+        // Buscar y cargar capas por categorías
+        Object.entries(categoriasCapas).forEach(([categoria, keywords]) => {
+          const capasCategoria = capas.filter(capa => 
+            keywords.some(keyword => 
+              capa.archivo.toLowerCase().includes(keyword.toLowerCase()) ||
+              (capa.nombre && capa.nombre.toLowerCase().includes(keyword.toLowerCase()))
+            )
+          );
+          
+          if (capasCategoria.length > 0) {
+            console.log(`📂 ${categoria}: ${capasCategoria.length} capas`);
+            capasCategoria.forEach(capa => {
+              cargarCapaFlatGeobuf(capa, categoria);
+            });
+          }
+        });
+        
+        // Actualizar lista en el UI organizada por categorías
+        actualizarListaCapasPorCategorias(capas, categoriasCapas);
+        
+      } catch (error) {
+        console.error('❌ Error cargando capas locales:', error);
+      }
+    }
+    
+    async function cargarCapaFlatGeobuf(capa, categoria = 'General') {
+      try {
+        console.log(`📂 Cargando capa: ${capa.archivo} (${categoria})`);
+        
+        const response = await fetch(capa.url);
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // Usar FlatGeobuf para leer los datos
+        const features = [];
+        const it = flatgeobuf.deserialize(new Uint8Array(arrayBuffer));
+        for await (const feature of it) {
+          features.push(feature);
+        }
+        
+        // Crear capa GeoJSON y añadirla al mapa
+        const geoJsonLayer = L.geoJSON(features, {
+          style: function(feature) {
+            return {
+              fillColor: getColorForCategoria(categoria),
+              weight: 2,
+              opacity: 0.8,
+              color: getColorForCategoria(categoria),
+              fillOpacity: 0.3
+            };
+          },
+          onEachFeature: function(feature, layer) {
+            if (feature.properties) {
+              const popupContent = Object.entries(feature.properties)
+                .slice(0, 5)  // Primeras 5 propiedades
+                .map(([key, value]) => `<b>${key}:</b> ${value}`)
+                .join('<br>');
+              layer.bindPopup(`<b>${categoria}</b><br><b>${capa.nombre || capa.archivo}</b><br>${popupContent}`);
+            }
+          }
+        }).addTo(map);
+        
+        console.log(`✅ Capa cargada: ${capa.archivo} (${features.length} elementos) - ${categoria}`);
+        
+      } catch (error) {
+        console.error(`❌ Error cargando ${capa.archivo}:`, error);
+      }
+    }
+    
+    function getColorForCategoria(categoria) {
+      const colors = {
+        'Vías Pecuarias': '#8B4513',      // Marrón
+        'Montes Públicos': '#228B22',     // Verde bosque
+        'Red Natura 2000': '#2ECC71',     // Verde esmeralda
+        'Espacio Hidráulico Protegido': '#3498DB',  // Azul agua
+        'Zonas Inundables': '#5DADE2',    // Azul claro
+        'Riesgo Sísmico': '#E74C3C',      // Rojo
+        'Riesgo Desertificación': '#F39C12', // Naranja
+        'Riesgo Volcánico': '#8B0000',     // Rojo oscuro
+        'Bienes de Interés Cultural': '#9B59B6', // Púrpura
+        'IGN Base': '#7F8C8D',            // Gris
+        'General': '#95A5A6'              // Gris por defecto
+      };
+      
+      return colors[categoria] || colors['General'];
+    }
+    
+    function actualizarListaCapasPorCategorias(capas, categoriasCapas) {
+      const capasList = document.getElementById('capasList');
+      if (!capasList) return;
+      
+      let html = '<h4>🗺️ Capas por Categorías:</h4>';
+      
+      // Mostrar capas organizadas por categorías
+      Object.entries(categoriasCapas).forEach(([categoria, keywords]) => {
+        const capasCategoria = capas.filter(capa => 
+          keywords.some(keyword => 
+            capa.archivo.toLowerCase().includes(keyword.toLowerCase()) ||
+            (capa.nombre && capa.nombre.toLowerCase().includes(keyword.toLowerCase()))
+          )
+        );
+        
+        if (capasCategoria.length > 0) {
+          const color = getColorForCategoria(categoria);
+          html += `
+            <div style="margin: 10px 0; padding: 8px; border-left: 4px solid ${color}; background: rgba(0,0,0,0.05);">
+              <strong style="color: ${color};">${categoria}</strong> (${capasCategoria.length})
+              <div style="margin-left: 10px; margin-top: 5px;">
+          `;
+          
+          capasCategoria.forEach(capa => {
+            html += `
+              <div style="margin: 3px 0;">
+                <label style="font-size: 12px;">
+                  <input type="checkbox" checked onchange="toggleCapa('${capa.archivo}', this.checked)">
+                  ${capa.nombre || capa.archivo}
+                </label>
+              </div>
+            `;
+          });
+          
+          html += '</div></div>';
+        }
+      });
+      
+      // Añadir capas sin categorizar
+      const capasSinCategoria = capas.filter(capa => {
+        return !Object.values(categoriasCapas).some(keywords =>
+          keywords.some(keyword => 
+            capa.archivo.toLowerCase().includes(keyword.toLowerCase()) ||
+            (capa.nombre && capa.nombre.toLowerCase().includes(keyword.toLowerCase()))
+          )
+        );
+      });
+      
+      if (capasSinCategoria.length > 0) {
+        html += `
+          <div style="margin: 10px 0; padding: 8px; border-left: 4px solid #95A5A6; background: rgba(0,0,0,0.05);">
+            <strong style="color: #95A5A6;">Otras Capas</strong> (${capasSinCategoria.length})
+            <div style="margin-left: 10px; margin-top: 5px;">
+        `;
+        
+        capasSinCategoria.forEach(capa => {
+          html += `
+            <div style="margin: 3px 0;">
+              <label style="font-size: 12px;">
+                <input type="checkbox" onchange="toggleCapa('${capa.archivo}', this.checked)">
+                ${capa.nombre || capa.archivo}
+              </label>
+            </div>
+          `;
+        });
+        
+        html += '</div></div>';
+      }
+      
+      capasList.innerHTML = html;
+    }
+    
+    async function toggleCapa(archivo, activar) {
+      if (activar) {
+        // Buscar la capa y cargarla
+        try {
+          const response = await fetch('/api/v1/capas/fgb');
+          const capas = await response.json();
+          const capa = capas.find(c => c.archivo === archivo);
+          if (capa) {
+            await cargarCapaFlatGeobuf(capa);
+          }
+        } catch (error) {
+          console.error('Error toggling capa:', error);
+        }
+      }
+      // TODO: Implementar remover capa si se desactiva
+    }
+    
     async function cargarReferencia() {
       const ref = document.getElementById('refInput').value.trim();
       if (!ref) {
-        alert('Introduce una referencia catastral');
+        alert('Por favor, introduce una referencia catastral');
         return;
       }
       
@@ -95,44 +287,29 @@
           return;
         }
         
-        const data = await response.json();
-        if (data.features && data.features.length > 0) {
-          L.geoJSON(data.features[0], {
-            style: { color: '#ef4444', weight: 3, fillOpacity: 0.06 }
-          }).addTo(map);
-          map.fitBounds(L.geoJSON(data.features[0]).getBounds());
-          alert(`✅ Referencia cargada: ${ref}`);
-        }
-      } catch (e) {
-        console.error('Error:', e);
+        const geojson = await response.json();
+        
+        L.geoJSON(geojson, {
+          style: {
+            color: '#e74c3c',
+            weight: 3,
+            fillOpacity: 0.3
+          }
+        }).addTo(map);
+        
+        // Centrar mapa en la referencia
+        const bounds = L.geoJSON(geojson).getBounds();
+        map.fitBounds(bounds);
+        
+      } catch (error) {
+        console.error('Error cargando referencia:', error);
         alert('Error cargando referencia');
       }
     }
 
     async function cargarCapas() {
-      try {
-        const response = await fetch('/api/v1/capas/fgb');
-        const data = await response.json();
-        const container = document.getElementById('capasList');
-        container.innerHTML = '<strong>Capas disponibles:</strong><br>';
-        
-        if (data.capas && data.capas.length > 0) {
-          data.capas.forEach(capa => {
-            const btn = document.createElement('button');
-            btn.textContent = capa.nombre;
-            btn.style.margin = '2px';
-            btn.style.fontSize = '12px';
-            btn.onclick = () => cargarCapaIndividual(capa.url);
-            container.appendChild(btn);
-            container.appendChild(document.createElement('br'));
-          });
-        } else {
-          container.innerHTML += 'No hay capas disponibles';
-        }
-      } catch (e) {
-        console.error('Error:', e);
-        alert('Error cargando capas');
-      }
+      // Esta función ahora carga las capas locales
+      await cargarCapasLocales();
     }
 
     async function cargarCapaIndividual(url) {

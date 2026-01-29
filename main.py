@@ -113,11 +113,11 @@ async def sync_check():
         "status": "synchronized",
         "timestamp": now.strftime("%Y-%m-%dT%H:%M:%S"),
         "cache_bust": CACHE_BUST,
-        "main_page": "Visor Catastral (index.html)",
+        "main_page": "Visor Catastral Simple",
         "routes": {
-            "/": "templates/index.html (Visor Catastral)",
-            "/visor_catastral.html": "templates/index.html (Visor Catastral)",
-            "/index.html": "templates/index.html (Visor Catastral)",
+            "/": "templates/visor_catastral_simple.html (Visor Simple)",
+            "/visor_catastral.html": "templates/visor_catastral_simple.html (Visor Simple)",
+            "/index.html": "templates/visor_catastral_simple.html (Visor Simple)",
             "/catastro.html": "templates/catastro.html",
             "/analisis.html": "templates/analisis.html"
         },
@@ -127,17 +127,14 @@ async def sync_check():
             "/capas": "/app/capas"
         },
         "scripts_order": {
-            "index.html": [
+            "visor_catastral_simple.html": [
                 "leaflet.css",
-                "flatgeobuf-geojson.min.js", 
                 "leaflet.js",
-                "leaflet.draw.js",
-                "leaflet.geometryutil.min.js",
-                "custom_map_code"
+                "custom_simple_code"
             ]
         },
-        "message": "🚀 VERSIÓN ACTUALIZADA - Visor Catastral con análisis de afecciones",
-        "version": "3.0-FORZADA-" + str(int(now.timestamp()))
+        "message": "� VERSIÓN SIMPLE ACTIVADA - Visor Catastral básico funcional",
+        "version": "3.0-SIMPLE-" + str(int(now.timestamp()))
     }
 
 @app.get("/api/v1/force-update")
@@ -1029,23 +1026,23 @@ app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    """Página principal - Visor Catastral"""
-    return FileResponse('templates/index.html')
+    """Página principal - Visor Catastral Simple"""
+    return FileResponse('templates/visor_catastral_simple.html')
 
 @app.get("/visor.html")
 async def read_visor():
     """Visor interactivo de mapas"""
-    return FileResponse('templates/index.html')
+    return FileResponse('templates/visor_catastral_simple.html')
 
 @app.get("/index.html")
 async def read_index_html():
     """Página de inicio del sistema"""
-    return FileResponse('templates/index.html')
+    return FileResponse('templates/visor_catastral_simple.html')
 
 @app.get("/visor_catastral.html")
 async def read_visor_catastral():
     """Visor catastral avanzado"""
-    return FileResponse('templates/index.html')
+    return FileResponse('templates/visor_catastral_simple.html')
 
 @app.get("/catastro.html")
 async def read_catastro():
