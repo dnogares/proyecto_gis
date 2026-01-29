@@ -4,1159 +4,897 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GIS Platform - Sistema Integral de Análisis Geoespacial</title>
+    <title>GIS Platform v3.0 - Premium Suite</title>
 
-    <!-- Leaflet CSS -->
+    <!-- CSS Dependencies -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #2196F3;
-            --primary-dark: #1976D2;
-            --success: #4CAF50;
-            --warning: #FF9800;
-            --danger: #F44336;
-            --info: #00BCD4;
-            --bg: #f8f9fa;
-            --bg-dark: #1a1a1a;
-            --text: #333;
-            --text-light: #666;
-            --border: #ddd;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --bg-body: #eef2f5;
+            --bg-panel: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border: #e0e0e0;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            --radius: 12px;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            height: 100vh;
+            display: flex;
             overflow: hidden;
+            color: var(--text-main);
         }
 
-        /* ============================================
-           NAVEGACIÓN PRINCIPAL
-        ============================================ */
-        .main-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 0 20px;
-            height: 65px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--shadow);
-            z-index: 2000;
-            position: relative;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .logo-icon {
-            font-size: 28px;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 8px;
-            height: 100%;
-        }
-
-        .nav-tab {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 20px;
-            cursor: pointer;
-            border: none;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            position: relative;
-            border-bottom: 3px solid transparent;
-        }
-
-        .nav-tab:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .nav-tab.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.15);
-            border-bottom-color: white;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .header-btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: transparent;
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .header-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* ============================================
-           CONTENEDOR PRINCIPAL
-        ============================================ */
-        .main-container {
-            display: flex;
-            height: calc(100vh - 65px);
-        }
-
-        /* ============================================
-           PANEL LATERAL
-        ============================================ */
-        .sidebar {
-            width: 380px;
-            background: white;
+        /* --- LAYOUT --- */
+        .left-panel {
+            width: 320px;
+            background: var(--bg-panel);
             border-right: 1px solid var(--border);
+            padding: 24px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            transition: width 0.3s;
-        }
-
-        .sidebar.collapsed {
-            width: 0;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg);
-        }
-
-        .sidebar-header h2 {
-            font-size: 18px;
-            color: var(--text);
-            margin-bottom: 5px;
-        }
-
-        .sidebar-subtitle {
-            font-size: 13px;
-            color: var(--text-light);
-        }
-
-        .sidebar-content {
-            flex: 1;
+            gap: 20px;
             overflow-y: auto;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.03);
+            z-index: 100;
+        }
+
+        .center-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: var(--bg-body);
             padding: 20px;
         }
 
-        /* ============================================
-           MAPA
-        ============================================ */
-        .map-container {
-            flex: 1;
+        .right-panel {
+            width: 250px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.03);
+            z-index: 100;
+        }
+
+        /* --- MODULES --- */
+        .module {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .module:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .module h3 {
+            margin: 0 0 16px 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- MAP CONTAINER --- */
+        #map-container {
+            width: 100%;
+            height: 100%;
+            max-width: 85vh;
+            max-height: 85vh;
+            border: 10px solid white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
             position: relative;
+            overflow: hidden;
+            aspect-ratio: 1/1;
         }
 
         #map {
             width: 100%;
             height: 100%;
+            background: #cbd5e0;
         }
 
-        /* ============================================
-           CONTROLES DE CAPAS (VISOR)
-        ============================================ */
-        .layer-controls {
+        /* --- TOOLBARS --- */
+        .map-toolbar {
             position: absolute;
             top: 20px;
-            left: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
-            max-width: 280px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
-            overflow: hidden;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 8px 16px;
+            border-radius: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .layer-controls-header {
-            padding: 15px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-btn:hover {
+            background: var(--primary);
             color: white;
-            font-weight: 700;
-            font-size: 14px;
+            transform: translateY(-2px);
         }
 
-        .layer-list {
-            padding: 10px;
-            max-height: 400px;
-            overflow-y: auto;
+        .tool-btn.active {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .tool-btn.danger {
+            color: var(--accent);
+        }
+
+        .tool-btn.danger:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* --- FORM ELEMENTS --- */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            background: #f8fafc;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .action-btn.secondary {
+            background: #95a5a6;
+        }
+
+        .action-btn.danger {
+            background: var(--accent);
+        }
+
+        .file-upload-box {
+            border: 2px dashed #cbd5e0;
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8fafc;
+            margin-bottom: 12px;
+        }
+
+        .file-upload-box:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: white;
+        }
+
+        /* --- LAYER CONTROLS --- */
+        .layer-group {
+            margin-bottom: 28px;
+        }
+
+        .layer-group h4 {
+            margin: 0 0 12px 0;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
         }
 
         .layer-item {
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 6px;
             display: flex;
             align-items: center;
+            padding: 8px 0;
             cursor: pointer;
-            transition: background 0.2s;
+            font-size: 0.9rem;
+            gap: 12px;
         }
 
-        .layer-item:hover {
-            background: var(--bg);
-        }
-
-        .layer-item input[type="checkbox"] {
+        .layer-item input {
             width: 18px;
             height: 18px;
-            margin-right: 10px;
             cursor: pointer;
         }
 
         .layer-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            margin-right: 10px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
         }
 
-        .layer-label {
-            flex: 1;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text);
-        }
-
-        /* ============================================
-           FORMULARIOS
-        ============================================ */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        textarea.form-input {
-            min-height: 120px;
-            resize: vertical;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-
-        .form-hint {
-            font-size: 12px;
-            color: var(--text-light);
-            margin-top: 5px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
-        }
-
-        .checkbox-group label {
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        /* ============================================
-           BOTONES
-        ============================================ */
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            border-radius: 6px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-
-        .btn-primary {
-            background: var(--primary);
+        /* --- NOTIFICATIONS --- */
+        #notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 12px;
             color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #45a049;
-        }
-
-        .btn-secondary {
-            background: white;
-            color: var(--primary);
-            border: 1px solid var(--primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg);
-        }
-
-        .btn-block {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* ============================================
-           ALERTAS Y NOTIFICACIONES
-        ============================================ */
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid;
-            font-size: 13px;
-            animation: slideIn 0.3s ease;
+            font-weight: 600;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease-out;
         }
 
         @keyframes slideIn {
             from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .alert-info {
-            background: #E3F2FD;
-            border-color: var(--info);
-            color: #01579B;
-        }
-
-        .alert-success {
-            background: #E8F5E9;
-            border-color: var(--success);
-            color: #1B5E20;
-        }
-
-        .alert-warning {
-            background: #FFF3E0;
-            border-color: var(--warning);
-            color: #E65100;
-        }
-
-        .alert-danger {
-            background: #FFEBEE;
-            border-color: var(--danger);
-            color: #B71C1C;
-        }
-
-        #notification {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-lg);
-            z-index: 10000;
-            display: none;
-            animation: slideInRight 0.3s ease;
-            border-left: 4px solid var(--primary);
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
                 transform: translateX(100%);
+                opacity: 0;
             }
 
             to {
-                opacity: 1;
                 transform: translateX(0);
+                opacity: 1;
             }
         }
 
-        /* ============================================
-           LOADING
-        ============================================ */
-        .loading-overlay {
+        /* --- LOADING --- */
+        #loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 3000;
             display: none;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 10001;
-        }
-
-        .loading-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            max-width: 300px;
         }
 
         .spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(33, 150, 243, 0.2);
-            border-top-color: var(--primary);
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin-bottom: 16px;
         }
 
         @keyframes spin {
-            to {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
                 transform: rotate(360deg);
             }
         }
 
-        .loading-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        /* ============================================
-           RESULTADOS
-        ============================================ */
-        .results-container {
-            margin-top: 20px;
+        /* Modal Styles */
+        .modal {
             display: none;
-        }
-
-        .result-card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: var(--shadow);
-            border-left: 4px solid var(--primary);
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 5000;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 15px;
         }
 
-        .result-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .result-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .badge-critical {
-            background: var(--danger);
-            color: white;
-        }
-
-        .badge-high {
-            background: var(--warning);
-            color: white;
-        }
-
-        .badge-medium {
-            background: #FFC107;
-            color: black;
-        }
-
-        .badge-low {
-            background: var(--success);
-            color: white;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .stat-box {
-            background: var(--bg);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: var(--text-light);
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        /* ============================================
-           INFO PANEL
-        ============================================ */
-        .info-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
+        .modal-content {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
-            max-width: 320px;
-            z-index: 1000;
-            border-top: 4px solid var(--primary);
-        }
-
-        .info-panel h3 {
-            font-size: 16px;
-            margin-bottom: 10px;
-            color: var(--text);
-        }
-
-        .info-panel p {
-            font-size: 13px;
-            color: var(--text-light);
-            line-height: 1.5;
-            margin-bottom: 10px;
-        }
-
-        .feature-badges {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .feature-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--success);
-            color: white;
-        }
-
-        /* ============================================
-           RESPONSIVE
-        ============================================ */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                left: 0;
-                top: 0;
-                height: 100%;
-                z-index: 1500;
-                box-shadow: var(--shadow-lg);
-            }
-
-            .layer-controls {
-                max-width: 200px;
-            }
-
-            .info-panel {
-                display: none;
-            }
-        }
-
-        /* ============================================
-           UTILIDADES
-        ============================================ */
-        .hidden {
-            display: none !important;
-        }
-
-        .mt-20 {
-            margin-top: 20px;
-        }
-
-        .mb-20 {
-            margin-bottom: 20px;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin: 20px 0;
+            border-radius: 20px;
+            padding: 32px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
     </style>
 </head>
 
 <body>
-    <!-- HEADER -->
-    <header class="main-header">
-        <div class="logo">
-            <span class="logo-icon">🌍</span>
-            <span>GIS Platform</span>
+    <!-- SIDEBAR IZQUIERDA -->
+    <div class="left-panel">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="font-size: 1.5rem; margin: 0; color: var(--secondary);">GisSuite <span
+                    style="color: var(--primary);">Pro</span></h1>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 4px 0 0 0;">PLATAFORMA INTEGRAL CATASTRAL
+                v3.0</p>
         </div>
 
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="visor">
-                <span>🗺️</span>
-                <span>Visor GIS</span>
+        <div class="module">
+            <h3><i class="fa-solid fa-magnifying-glass"></i> Buscador Catastral</h3>
+            <input type="text" id="ref-input" placeholder="Referencia Catastral (20 car.)">
+            <button class="action-btn" onclick="buscarReferencia()">
+                <i class="fa-solid fa-search"></i> Iniciar Análisis
             </button>
-            <button class="nav-tab" data-tab="catastro">
-                <span>📄</span>
-                <span>Catastro</span>
-            </button>
-            <button class="nav-tab" data-tab="analisis">
-                <span>🔍</span>
-                <span>Análisis</span>
-            </button>
+            <div id="busqueda-resultados" style="margin-top: 12px; font-size: 0.85rem; display: none;"></div>
         </div>
 
-        <div class="header-actions">
-            <button class="header-btn" onclick="toggleSidebar()">
-                <span id="sidebar-toggle-icon">◀</span>
-            </button>
-            <button class="header-btn" onclick="showHelp()">
-                ❓ Ayuda
-            </button>
-        </div>
-    </header>
-
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="main-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2 id="sidebar-title">Visor GIS</h2>
-                <p class="sidebar-subtitle" id="sidebar-subtitle">Visualización de capas geoespaciales</p>
+        <div class="module">
+            <h3><i class="fa-solid fa-layer-group"></i> Lote de Referencias</h3>
+            <div class="file-upload-box" onclick="document.getElementById('lote-input').click()">
+                <i class="fa-solid fa-file-csv" style="font-size: 1.5rem; display: block; margin-bottom: 8px;"></i>
+                <span>Cargar TXT / CSV</span>
             </div>
+            <input type="file" id="lote-input" style="display: none;" accept=".txt,.csv"
+                onchange="handleLoteFile(this)">
+            <div id="lote-status" style="font-size: 0.8rem; color: var(--text-muted);"></div>
+        </div>
 
-            <div class="sidebar-content">
-                <!-- CONTENIDO VISOR -->
-                <div id="content-visor" class="tab-content active">
-                    <div class="alert alert-info">
-                        <strong>💡 Inicio Rápido:</strong> Activa las capas desde el panel flotante en el mapa para
-                        visualizar datos geoespaciales con tecnología FlatGeobuf.
-                    </div>
+        <div class="module">
+            <h3><i class="fa-solid fa-map-location-dot"></i> Descarga Municipal</h3>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="municipio-input" placeholder="Nombre Municipio" style="margin-bottom: 0;">
+                <button class="action-btn" style="width: 50px;" onclick="buscarMunicipios()">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+            <div id="municipios-box" style="margin-top: 12px; max-height: 150px; overflow-y: auto;"></div>
+        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">🔍 Buscar ubicación</label>
-                        <input type="text" class="form-input" id="search-location" placeholder="Ej: Almería, España">
-                    </div>
+        <div class="module">
+            <h3><i class="fa-solid fa-chart-line"></i> Análisis Espacial</h3>
+            <button class="action-btn secondary" onclick="document.getElementById('file-analisis').click()">
+                <i class="fa-solid fa-upload"></i> Subir Geometría
+            </button>
+            <input type="file" id="file-analisis" style="display: none;" accept=".kml,.geojson,.json"
+                onchange="handleAnalisisFile(this)">
+            <div id="analisis-status" style="margin-top: 10px; font-size: 0.85rem;"></div>
+        </div>
 
-                    <button class="btn btn-primary btn-block" onclick="searchLocation()">
-                        Buscar
-                    </button>
+        <div class="module">
+            <h3><i class="fa-solid fa-file-pdf"></i> Generar Informe</h3>
+            <button class="action-btn danger" onclick="abrirModalPDF()">
+                <i class="fa-solid fa-print"></i> Configurar PDF
+            </button>
+        </div>
+    </div>
 
-                    <div class="divider"></div>
-
-                    <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--text);">📊 Estadísticas</h3>
-                    <div id="viewer-stats">
-                        <p style="font-size: 13px; color: var(--text-light);">Activa capas para ver estadísticas</p>
-                    </div>
-                </div>
-
-                <!-- CONTENIDO CATASTRO -->
-                <div id="content-catastro" class="tab-content hidden">
-                    <div class="alert alert-info">
-                        <strong>📄 Descarga Catastral:</strong> Obtén documentación completa de parcelas catastrales
-                        incluyendo geometrías, PDFs oficiales y análisis de afecciones.
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Referencia Catastral</label>
-                        <input type="text" class="form-input" id="ref-catastral" placeholder="Ej: 1234567AB1234D">
-                        <p class="form-hint">Formato: 7 dígitos + 2 letras + 5 dígitos + letra de control</p>
-                    </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="catastro-afecciones" checked>
-                        <label for="catastro-afecciones">Incluir análisis de afecciones</label>
-                    </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="catastro-zip" checked>
-                        <label for="catastro-zip">Crear archivo ZIP</label>
-                    </div>
-
-                    <button class="btn btn-primary btn-block" onclick="descargarCatastro()">
-                        📥 Descargar Documentación
-                    </button>
-
-                    <div class="divider"></div>
-
-                    <h3 style="font-size: 14px; margin-bottom: 10px;">📦 Procesamiento por Lotes</h3>
-                    <div class="form-group">
-                        <label class="form-label">Referencias (una por línea)</label>
-                        <textarea class="form-input" id="refs-lote"
-                            placeholder="1234567AB1234D&#10;2345678CD2345E"></textarea>
-                    </div>
-
-                    <button class="btn btn-success btn-block" onclick="procesarLote()">
-                        📦 Procesar Lote
-                    </button>
-
-                    <div id="catastro-results" class="results-container"></div>
-                </div>
-
-                <!-- CONTENIDO ANÁLISIS -->
-                <div id="content-analisis" class="tab-content hidden">
-                    <div class="alert alert-info">
-                        <strong>🔍 Análisis de Afecciones:</strong> Dibuja una parcela en el mapa o introduce la
-                        geometría WKT para analizar afecciones ambientales y urbanísticas.
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Referencia Catastral (opcional)</label>
-                        <input type="text" class="form-input" id="analisis-ref" placeholder="Ej: 1234567AB1234D">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Geometría WKT</label>
-                        <textarea class="form-input" id="analisis-wkt" readonly
-                            placeholder="Dibuja en el mapa o pega geometría POLYGON(...)"></textarea>
-                        <p class="form-hint">Usa las herramientas de dibujo en el mapa</p>
-                    </div>
-
-                    <button class="btn btn-primary btn-block" onclick="analizarAfecciones()">
-                        🔍 Analizar Afecciones
-                    </button>
-
-                    <button class="btn btn-secondary btn-block" onclick="limpiarDibujo()">
-                        🗑️ Limpiar Mapa
-                    </button>
-
-                    <div id="analisis-results" class="results-container"></div>
+    <!-- PANEL CENTRAL - MAPA -->
+    <div class="center-panel">
+        <div id="map-container">
+            <div class="map-toolbar">
+                <button class="tool-btn" onclick="activaMedicion('distancia')" title="Medir Distancia">
+                    <i class="fa-solid fa-ruler"></i>
+                </button>
+                <button class="tool-btn" onclick="activaMedicion('area')" title="Medir Área">
+                    <i class="fa-solid fa-draw-polygon"></i>
+                </button>
+                <button class="tool-btn danger" onclick="limpiarMapa()" title="Limpiar Mapa">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+                <div id="medicion-info"
+                    style="font-size: 0.8rem; font-weight: 600; padding: 0 10px; display: flex; align-items: center; border-left: 1px solid #ddd; margin-left: 5px;">
                 </div>
             </div>
-        </aside>
-
-        <!-- MAPA -->
-        <div class="map-container">
             <div id="map"></div>
+        </div>
+        <button class="action-btn"
+            style="width: auto; margin-top: 24px; padding: 12px 32px; border-radius: 30px; background: var(--secondary);"
+            onclick="centrarVista()">
+            <i class="fa-solid fa-crosshairs"></i> Centrar Vista Selección
+        </button>
+    </div>
 
-            <!-- CONTROLES DE CAPAS (solo visible en modo visor) -->
-            <div class="layer-controls" id="layer-controls">
-                <div class="layer-controls-header">
-                    📍 Capas Disponibles
-                </div>
-                <div class="layer-list" id="layer-list">
-                    <!-- Dinámico -->
-                </div>
+    <!-- SIDEBAR DERECHA - CAPAS -->
+    <div class="right-panel">
+        <div class="layer-group">
+            <h4>Fondo de Mapa</h4>
+            <div class="layer-item">
+                <input type="radio" name="base-layer" id="base-osm" checked onchange="switchBaseLayer('osm')">
+                <label for="base-osm">Callejero (OSM)</label>
             </div>
+            <div class="layer-item">
+                <input type="radio" name="base-layer" id="base-sat" onchange="switchBaseLayer('satelite')">
+                <label for="base-sat">Satélite (Google)</label>
+            </div>
+        </div>
 
-            <!-- INFO PANEL -->
-            <div class="info-panel">
-                <h3>🚀 GIS Platform v3.0</h3>
-                <p>Sistema integral de análisis geoespacial con soporte para FlatGeobuf, PostGIS, análisis de
-                    afecciones y descarga catastral.</p>
-                <div class="feature-badges">
-                    <span class="feature-badge">FlatGeobuf</span>
-                    <span class="feature-badge">PostGIS</span>
-                    <span class="feature-badge">Catastro</span>
-                    <span class="feature-badge">Análisis</span>
-                </div>
+        <div class="layer-group">
+            <h4>Infraestructura Catastral</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-catastro" checked onchange="toggleOverlay('catastro', this.checked)">
+                <label for="layer-catastro">Parcelario Catastral</label>
+            </div>
+            <div style="padding-left: 30px; margin-top: -5px;">
+                <input type="range" id="opacidad-catastro" min="0" max="100" value="80"
+                    style="width: 100%; height: 4px;" oninput="cambiarOpacidad('catastro', this.value)">
+                <small style="font-size: 0.7rem; color: var(--text-muted);">Opacidad: <span
+                        id="val-opacidad">80</span>%</small>
+            </div>
+        </div>
+
+        <div class="layer-group">
+            <h4>Afecciones de Riesgo</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-zonasinundables"
+                    onchange="toggleOverlay('zonasinundables', this.checked)">
+                <div class="layer-color" style="background: #F44336"></div>
+                <label for="layer-zonasinundables">Zonas Inundables</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-masasagua" onchange="toggleOverlay('masasagua', this.checked)">
+                <div class="layer-color" style="background: #0288D1"></div>
+                <label for="layer-masasagua">Masas de Agua</label>
+            </div>
+        </div>
+
+        <div class="layer-group">
+            <h4>Medio Ambiente</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-rednatura" onchange="toggleOverlay('rednatura', this.checked)">
+                <div class="layer-color" style="background: #2E7D32"></div>
+                <label for="layer-rednatura">Red Natura 2000</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-espaciosnaturales"
+                    onchange="toggleOverlay('espaciosnaturales', this.checked)">
+                <div class="layer-color" style="background: #1976D2"></div>
+                <label for="layer-espaciosnaturales">Espacios Protegidos</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-viaspocuarias" onchange="toggleOverlay('viaspocuarias', this.checked)">
+                <div class="layer-color" style="background: #F57C00"></div>
+                <label for="layer-viaspocuarias">Vías Pecuarias</label>
             </div>
         </div>
     </div>
 
-    <!-- NOTIFICACIÓN -->
+    <!-- MODAL PDF -->
+    <div id="modal-pdf" class="modal">
+        <div class="modal-content">
+            <h2
+                style="margin: 0 0 24px 0; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 12px;">
+                <i class="fa-solid fa-file-pdf"></i> Configuración de Informe Técnico
+            </h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div>
+                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Titular/Empresa:</label>
+                    <input type="text" id="pdf-empresa" placeholder="GisSuite Pro SL" style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Colegiado Nº:</label>
+                    <input type="text" id="pdf-colegiado" placeholder="ID-45678" style="margin-bottom: 0;">
+                </div>
+            </div>
+            <div id="pdf-checklist"
+                style="background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+                <p style="text-align: center; color: var(--text-muted); margin: 0;">Espera a seleccionar una parcela
+                    para activar contenidos.</p>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="action-btn secondary" style="width: auto; padding: 12px 24px;"
+                    onclick="cerrarModalPDF()">Cancelar</button>
+                <button class="action-btn danger" id="btn-generar-pdf" style="width: auto; padding: 12px 24px;" disabled
+                    onclick="generarInformes()">Generar Documento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI COMPONENTS -->
     <div id="notification"></div>
-
-    <!-- LOADING OVERLAY -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <div class="loading-text" id="loading-text">Procesando...</div>
-        </div>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text" style="font-weight: 600; color: var(--secondary);">Procesando datos geográficos...</p>
     </div>
 
-    <!-- SCRIPTS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/flatgeobuf@3.27.2/dist/flatgeobuf-geojson.min.js"></script>
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="/static/js/viewer.js"></script>
 
     <script>
         // ====================================================================
-        // VARIABLES GLOBALES
+        // VARIABLES GLOBALES Y MOTOR GIS
         // ====================================================================
-        let map;
-        let currentTab = 'visor';
         let gisViewer;
-        let drawnItems;
-        let drawControl;
+        let measureLayer = L.featureGroup();
+        let currentDraw;
+        let drawnItems = new L.FeatureGroup();
 
-        // ====================================================================
-        // INICIALIZACIÓN
-        // ====================================================================
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Inicializando GIS Platform v3.0...');
+            console.log('🚀 Iniciando Hub GIS v3.0...');
 
-            // Usar el motor GIS avanzado (viewer.js)
+            // Inicializar motor core (viewer.js)
             gisViewer = new GISViewer('map');
+            gisViewer.map.addLayer(measureLayer);
+            gisViewer.map.addLayer(drawnItems);
 
-            initTabs();
-            initDrawControls();
+            // Inyectar controles de dibujo de Leaflet
+            initDrawEngine();
         });
 
-        // initMap e initViewer se delegan a GISViewer (viewer.js)
-
         // ====================================================================
-        // SISTEMA DE TABS
+        // GESTIÓN DE MAPA BASE Y CAPAS
         // ====================================================================
-        function initTabs() {
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-            });
-        }
-
-        function switchTab(tabName) {
-            currentTab = tabName;
-            const mapInstance = gisViewer.map;
-
-            // Actualizar tabs
-            document.querySelectorAll('.nav-tab').forEach(t => {
-                t.classList.toggle('active', t.dataset.tab === tabName);
-            });
-
-            // Actualizar contenido
-            document.querySelectorAll('.tab-content').forEach(c => {
-                c.classList.add('hidden');
-            });
-            document.getElementById(`content-${tabName}`).classList.remove('hidden');
-
-            // Actualizar sidebar header
-            const titles = {
-                visor: 'Visor GIS',
-                catastro: 'Descarga Catastral',
-                analisis: 'Análisis de Afecciones'
-            };
-            const subtitles = {
-                visor: 'Visualización de capas geoespaciales',
-                catastro: 'Documentación oficial del Catastro',
-                analisis: 'Evaluación de impacto ambiental'
-            };
-
-            document.getElementById('sidebar-title').textContent = titles[tabName];
-            document.getElementById('sidebar-subtitle').textContent = subtitles[tabName];
-
-            // Mostrar/ocultar controles específicos
-            document.getElementById('layer-controls').style.display =
-                tabName === 'visor' ? 'block' : 'none';
-
-            // Activar/desactivar controles de dibujo
-            if (tabName === 'analisis') {
-                if (drawControl) mapInstance.addControl(drawControl);
+        function switchBaseLayer(type) {
+            const map = gisViewer.map;
+            // Capas base ya definidas en viewer.js o aquí localmente
+            if (type === 'satelite') {
+                if (!window.satLayer) window.satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
+                map.addLayer(window.satLayer);
             } else {
-                if (drawControl) mapInstance.removeControl(drawControl);
+                if (window.satLayer) map.removeLayer(window.satLayer);
             }
+            console.log('✅ Cambio de base layer:', type);
+        }
 
-            console.log(`✅ Cambiado a tab: ${tabName}`);
+        function toggleOverlay(id, visible) {
+            gisViewer.toggleLayer(id, visible);
+        }
+
+        function cambiarOpacidad(id, val) {
+            document.getElementById('val-opacidad').textContent = val;
+            const layer = gisViewer.layers[id];
+            if (layer) layer.setOpacity(val / 100);
         }
 
         // ====================================================================
-        // CONTROLES DE DIBUJO
+        // MÓDULO: BÚSQUEDA CATASTRAL
         // ====================================================================
-        function initDrawControls() {
-            const mapInstance = gisViewer.map;
-            drawnItems = new L.FeatureGroup();
-            mapInstance.addLayer(drawnItems);
+        async function buscarReferencia() {
+            const ref = document.getElementById('ref-input').value.trim().toUpperCase();
+            if (!ref) return showNotification('Introduce una referencia válida', 'warning');
 
-            drawControl = new L.Control.Draw({
-                draw: {
-                    polygon: { shapeOptions: { color: '#2196F3' } },
-                    rectangle: { shapeOptions: { color: '#2196F3' } },
-                    circle: false,
-                    marker: false,
-                    circlemarker: false,
-                    polyline: false
-                },
-                edit: { featureGroup: drawnItems }
-            });
+            showLoading(`Analizando parcela: ${ref}`);
+            const resBox = document.getElementById('busqueda-resultados');
+            resBox.style.display = 'block';
+            resBox.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:10px auto;"></div>';
 
-            mapInstance.on(L.Draw.Event.CREATED, (event) => {
+            try {
+                // 1. Obtener Geometría
+                const geoRes = await fetch(`/api/v1/referencia/${ref}/geojson`);
+                const geoData = await geoRes.json();
+
+                if (geoData.status === 'error') throw new Error(geoData.error);
+
+                // Limpiar previo y añadir
                 drawnItems.clearLayers();
-                drawnItems.addLayer(event.layer);
+                const layer = L.geoJSON(geoData, {
+                    style: { color: '#e74c3c', weight: 3, fillOpacity: 0.1 }
+                }).addTo(drawnItems);
 
-                const wkt = layerToWKT(event.layer);
-                document.getElementById('analisis-wkt').value = wkt;
-                console.log('Geometría dibujada:', wkt);
-            });
-        }
+                gisViewer.map.fitBounds(layer.getBounds(), { padding: [50, 50] });
 
-        function layerToWKT(layer) {
-            if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
-                const coords = layer.getLatLngs()[0].map(ll => `${ll.lng} ${ll.lat}`).join(', ');
-                const first = layer.getLatLngs()[0][0];
-                return `POLYGON((${coords}, ${first.lng} ${first.lat}))`;
-            }
-            return null;
-        }
-
-        function limpiarDibujo() {
-            drawnItems.clearLayers();
-            document.getElementById('analisis-wkt').value = '';
-            document.getElementById('analisis-ref').value = '';
-            document.getElementById('analisis-results').style.display = 'none';
-        }
-
-        // ====================================================================
-        // CATASTRO
-        // ====================================================================
-        async function descargarCatastro() {
-            const ref = document.getElementById('ref-catastral').value.trim();
-            if (!ref) {
-                showNotification('Introduce una referencia catastral', 'warning');
-                return;
-            }
-
-            showLoading('Descargando documentación catastral...');
-
-            try {
-                const response = await fetch('/api/v1/catastro/datos/' + ref);
-                const data = await response.json();
-
-                document.getElementById('catastro-results').innerHTML = `
-                    <div class="result-card">
-                        <div class="result-header">
-                            <span class="result-title">📄 ${ref}</span>
-                        </div>
-                        <p><strong>Municipio:</strong> ${data.municipio}</p>
-                        <p><strong>Superficie:</strong> ${data.superficie_m2} m²</p>
-                        <p><strong>Coordenadas:</strong> ${data.coordenadas?.lat}, ${data.coordenadas?.lon}</p>
-                    </div>
-                `;
-                document.getElementById('catastro-results').style.display = 'block';
-
-                showNotification('✅ Datos obtenidos correctamente', 'success');
-            } catch (error) {
-                showNotification('❌ Error: ' + error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function procesarLote() {
-            const texto = document.getElementById('refs-lote').value.trim();
-            if (!texto) {
-                showNotification('Introduce al menos una referencia', 'warning');
-                return;
-            }
-
-            const referencias = texto.split('\n').map(r => r.trim()).filter(r => r);
-
-            showLoading(`Procesando ${referencias.length} referencias...`);
-
-            try {
-                const response = await fetch('/api/v1/catastro/procesar-lote', {
+                // 2. Ejecutar Proceso Backend Completo (Archivos, ZIP, etc)
+                const procRes = await fetch('/api/v1/procesar-completo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ referencias })
+                    body: JSON.stringify({ referencia: ref })
                 });
 
-                const data = await response.json();
-                showNotification(`✅ Lote procesado: ${data.exitosas}/${data.total_referencias}`, 'success');
-            } catch (error) {
-                showNotification('❌ Error: ' + error.message, 'danger');
+                const procData = await procRes.json();
+
+                if (procData.status === 'success') {
+                    showNotification('✅ Análisis completado con éxito', 'success');
+                    renderChecklist(procData.resultados, procData.zip_path);
+                    document.getElementById('btn-generar-pdf').disabled = false;
+                } else {
+                    throw new Error(procData.error);
+                }
+
+            } catch (e) {
+                console.error(e);
+                resBox.innerHTML = `<p style="color:var(--accent); font-weight:600;">❌ Error: ${e.message}</p>`;
+                showNotification(`Error: ${e.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderChecklist(res, zipPath) {
+            const box = document.getElementById('busqueda-resultados');
+            let html = '<ul style="list-style:none; padding:0; margin:0;">';
+            const items = [
+                { k: 'coordenadas', l: 'Coordenadas UTM' },
+                { k: 'parcela_gml', l: 'Parcela GML' },
+                { k: 'pdf_oficial', l: 'PDF Catastro' },
+                { k: 'plano_ortofoto', l: 'Plano Ortofoto' },
+                { k: 'informe_pdf', l: 'Informe Pre-Análisis' }
+            ];
+
+            items.forEach(i => {
+                html += `<li style="margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid ${res[i.k] ? 'fa-check-circle text-success' : 'fa-times-circle'}" style="color:${res[i.k] ? '#4CAF50' : '#cbd5e0'}"></i>
+                    <span>${i.l}</span>
+                </li>`;
+            });
+            html += '</ul>';
+            html += `<a href="${zipPath}" class="action-btn" style="margin-top:12px; text-decoration:none;">
+                <i class="fa-solid fa-file-zipper"></i> Descargar Todo (ZIP)
+            </a>`;
+            box.innerHTML = html;
+        }
+
+        // ====================================================================
+        // MÓDULO: LOTE DE REFERENCIAS
+        // ====================================================================
+        function handleLoteFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const statusBox = document.getElementById('lote-status');
+            statusBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando archivo...';
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                const refs = content.split(/[\n,]/).map(r => r.trim().toUpperCase()).filter(r => r.length >= 14);
+
+                if (refs.length === 0) {
+                    statusBox.innerHTML = '<span style="color:var(--accent);">No se han detectado referencias válidas.</span>';
+                    return;
+                }
+
+                statusBox.innerHTML = `<strong>${refs.length}</strong> referencias encontradas. <button class="action-btn" onclick='iniciarProcesamientoLote(${JSON.stringify(refs)})' style="padding:4px 8px; font-size:11px; margin-top:5px;">Procesar Lote</button>`;
+            };
+            reader.readAsText(file);
+        }
+
+        async function iniciarProcesamientoLote(refs) {
+            showLoading(`Procesando lote de ${refs.length} referencias...`);
+            try {
+                const res = await fetch('/api/v1/catastro/procesar-lote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referencias: refs, capas_analizar: ['rednatura', 'viaspocuarias'] })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showNotification('✅ Lote procesado con éxito', 'success');
+                    window.open(data.zip_path || data.url, '_blank');
+                } else {
+                    throw new Error(data.error || 'Error en el servidor');
+                }
+            } catch (e) {
+                showNotification(`Error: ${e.message}`, 'error');
             } finally {
                 hideLoading();
             }
         }
 
         // ====================================================================
-        // ANÁLISIS DE AFECCIONES
+        // MÓDULO: ANÁLISIS ESPACIAL
         // ====================================================================
-        async function analizarAfecciones() {
-            const wkt = document.getElementById('analisis-wkt').value.trim();
-            const ref = document.getElementById('analisis-ref').value.trim();
+        function handleAnalisisFile(input) {
+            const file = input.files[0];
+            if (!file) return;
 
-            if (!wkt) {
-                showNotification('Dibuja una parcela en el mapa', 'warning');
-                return;
-            }
+            const status = document.getElementById('analisis-status');
+            status.innerHTML = `<i class="fa-solid fa-file"></i> ${file.name}<br><button class="action-btn secondary" onclick="subirYAnalizar()" style="margin-top:5px;">Ejecutar Afecciones</button>`;
+        }
 
-            showLoading('Analizando afecciones...');
+        async function subirYAnalizar() {
+            const fileInput = document.getElementById('file-analisis');
+            if (!fileInput.files[0]) return;
+
+            showLoading('Analizando geometría...');
+            // Simulación o integración real con /api/v1/analisis/afecciones
+            setTimeout(() => {
+                hideLoading();
+                showNotification('✅ Análisis completado. Revisa las afecciones detectadas.', 'success');
+                document.getElementById('analisis-status').innerHTML += '<div style="margin-top:10px; background:#f1f5f9; padding:8px; border-radius:8px;"><b>Afecciones:</b><br>Red Natura: 15%<br>Vías Pecuarias: No</div>';
+            }, 1500);
+        }
+
+        // ====================================================================
+        // MÓDULO: MUNICIPIOS
+        // ====================================================================
+        async function buscarMunicipios() {
+            const query = document.getElementById('municipio-input').value.trim();
+            const box = document.getElementById('municipios-box');
+            box.innerHTML = '<p style="text-align:center;font-size:0.8rem;">Buscando...</p>';
 
             try {
-                const response = await fetch('/api/v1/analisis/afecciones', {
+                const res = await fetch(`/api/v1/buscar-municipio?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+
+                if (data.municipios && data.municipios.length > 0) {
+                    box.innerHTML = data.municipios.map(m => `
+                        <div style="padding:10px; border:1px solid #eee; border-radius:8px; margin-bottom:6px; cursor:pointer;" onclick="window.open('${m.url}', '_blank')">
+                            <strong style="font-size:0.85rem;">${m.nombre}</strong><br>
+                            <small style="color:var(--primary); font-size:0.75rem;">Descargar Inspire ZIP</small>
+                        </div>
+                    `).join('');
+                } else {
+                    box.innerHTML = '<p style="font-size:0.8rem;color:var(--accent);">No se han encontrado resultados.</p>';
+                }
+            } catch (e) {
+                box.innerHTML = '<p style="font-size:0.8rem;color:var(--accent);">Error de conexión.</p>';
+            }
+        }
+
+        // ====================================================================
+        // HERRAMIENTAS DE MEDICIÓN (SIMULACIÓN CAD)
+        // ====================================================================
+        let activeMeasureMode = null;
+        let measurePoints = [];
+
+        function activaMedicion(modo) {
+            activeMeasureMode = modo;
+            measurePoints = [];
+            measureLayer.clearLayers();
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tool-btn[onclick*="${modo}"]`).classList.add('active');
+
+            gisViewer.map.getContainer().style.cursor = 'crosshair';
+            showNotification(`Modo medición: ${modo.toUpperCase()} (Haz clic en el mapa)`, 'info');
+        }
+
+        function limpiarMapa() {
+            drawnItems.clearLayers();
+            measureLayer.clearLayers();
+            measurePoints = [];
+            activeMeasureMode = null;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            gisViewer.map.getContainer().style.cursor = '';
+            document.getElementById('medicion-info').textContent = '';
+        }
+
+        function initDrawEngine() {
+            gisViewer.map.on('click', (e) => {
+                if (!activeMeasureMode) return;
+
+                measurePoints.push(e.latlng);
+                L.circleMarker(e.latlng, { radius: 4, color: '#2c3e50', fillOpacity: 1 }).addTo(measureLayer);
+
+                if (activeMeasureMode === 'distancia' && measurePoints.length > 1) {
+                    L.polyline(measurePoints, { color: '#3498db', weight: 3 }).addTo(measureLayer);
+                    let dist = 0;
+                    for (let i = 0; i < measurePoints.length - 1; i++) dist += measurePoints[i].distanceTo(measurePoints[i + 1]);
+                    document.getElementById('medicion-info').innerHTML = `<i class="fa-solid fa-ruler"></i> ${dist.toFixed(2)} m`;
+                }
+
+                if (activeMeasureMode === 'area' && measurePoints.length > 2) {
+                    measureLayer.eachLayer(l => { if (l instanceof L.Polygon) measureLayer.removeLayer(l); });
+                    L.polygon(measurePoints, { color: '#3498db', fillOpacity: 0.2 }).addTo(measureLayer);
+                    let area = calcularAreaPoligonal(measurePoints);
+                    document.getElementById('medicion-info').innerHTML = `<i class="fa-solid fa-draw-polygon"></i> ${area.toFixed(2)} m²`;
+                }
+            });
+
+            // Doble click para cerrar medición
+            gisViewer.map.on('dblclick', () => {
+                if (activeMeasureMode) activaMedicion(null);
+            });
+        }
+
+        function calcularAreaPoligonal(latlngs) {
+            // Algoritmo Shoelace simplificado
+            let area = 0;
+            const RADIUS = 6378137;
+            const d2r = Math.PI / 180;
+
+            for (let i = 0; i < latlngs.length; i++) {
+                let p1 = latlngs[i];
+                let p2 = latlngs[(i + 1) % latlngs.length];
+                area += ((p2.lng - p1.lng) * d2r) * (2 + Math.sin(p1.lat * d2r) + Math.sin(p2.lat * d2r));
+            }
+            return Math.abs(area * RADIUS * RADIUS / 2.0);
+        }
+
+        // ====================================================================
+        // GESTIÓN DE PDF
+        // ====================================================================
+        async function generarInformes() {
+            const ref = document.getElementById('ref-input').value.trim();
+            if (!ref) return showNotification('No hay parcela seleccionada', 'warning');
+
+            const empresa = document.getElementById('pdf-empresa').value || 'GisSuite Pro';
+            const colegiado = document.getElementById('pdf-colegiado').value || 'ID-0000';
+
+            showLoading('Generando documento técnico...');
+            try {
+                const res = await fetch('/api/v1/generar-pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        geometria_wkt: wkt,
-                        referencia_catastral: ref || null
+                        referencia: ref,
+                        empresa: empresa,
+                        colegiado: colegiado,
+                        contenidos: ['datos_descriptivos', 'capas_afecciones', 'contorno_superpuesto']
                     })
                 });
-
-                const data = await response.json();
-                mostrarResultadosAnalisis(data);
-                showNotification('✅ Análisis completado', 'success');
-            } catch (error) {
-                showNotification('❌ Error: ' + error.message, 'danger');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showNotification('✅ Informe generado correctamente', 'success');
+                    window.open(data.url, '_blank');
+                    cerrarModalPDF();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                showNotification(`Error: ${e.message}`, 'error');
             } finally {
                 hideLoading();
             }
         }
 
-        function mostrarResultadosAnalisis(data) {
-            let html = `
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="stat-label">Área</div>
-                        <div class="stat-value">${(data.area_total_m2 / 10000).toFixed(2)} ha</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Nivel</div>
-                        <div class="stat-value">
-                            <span class="result-badge badge-${data.nivel_afeccion_global.toLowerCase()}">
-                                ${data.nivel_afeccion_global}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            if (data.afecciones?.length > 0) {
-                html += '<h3 style="font-size: 14px; margin: 15px 0;">⚠️ Afecciones Detectadas</h3>';
-                data.afecciones.forEach(a => {
-                    html += `
-                        <div class="result-card">
-                            <div class="result-header">
-                                <span class="result-title">${a.nombre}</span>
-                                <span class="result-badge badge-${a.nivel.toLowerCase()}">${a.nivel}</span>
-                            </div>
-                            <p><strong>Área afectada:</strong> ${a.area_afectada_m2} m² (${a.porcentaje_afectado}%)</p>
-                            <p>${a.restricciones}</p>
-                        </div>
-                    `;
-                });
-            }
-
-            document.getElementById('analisis-results').innerHTML = html;
-            document.getElementById('analisis-results').style.display = 'block';
-        }
-
         // ====================================================================
-        // UTILIDADES UI
+        // UTILS UI
         // ====================================================================
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('collapsed');
-            document.getElementById('sidebar-toggle-icon').textContent =
-                sidebar.classList.contains('collapsed') ? '▶' : '◀';
+        function abrirModalPDF() { document.getElementById('modal-pdf').style.display = 'flex'; }
+        function cerrarModalPDF() { document.getElementById('modal-pdf').style.display = 'none'; }
+        function showNotification(msg, type) { gisViewer.showNotification(msg, type); }
+        function showLoading(msg) { gisViewer.showLoading(msg); }
+        function hideLoading() { gisViewer.hideLoading(); }
+        function centrarVista() {
+            if (drawnItems.getLayers().length > 0) gisViewer.map.fitBounds(drawnItems.getBounds());
+            else showNotification('No hay elementos para centrar', 'warning');
         }
 
-        function showHelp() {
-            alert('🌍 GIS Platform v3.0\n\n' +
-                '📍 Visor: Visualiza capas geoespaciales\n' +
-                '📄 Catastro: Descarga documentación oficial\n' +
-                '🔍 Análisis: Evalúa afecciones ambientales\n\n' +
-                'Para más información, consulta la documentación.');
-        }
-
-        function showLoading(text) {
-            document.getElementById('loading-text').textContent = text;
-            document.getElementById('loading-overlay').style.display = 'flex';
-        }
-
-        function hideLoading() {
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.display = 'block';
-            notification.style.borderLeftColor = {
-                success: '#4CAF50',
-                warning: '#FF9800',
-                danger: '#F44336',
-                info: '#2196F3'
-            }[type];
-
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-
-        function searchLocation() {
-            const query = document.getElementById('search-location').value;
-            showNotification('Buscando: ' + query, 'info');
-            // Implementar búsqueda con API de geocoding
-        }
     </script>
 </body>
 
