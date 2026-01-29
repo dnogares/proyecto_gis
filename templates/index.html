@@ -9,6 +9,10 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- Estilos personalizados -->
     <style>
         * {
@@ -20,8 +24,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             overflow: hidden;
-            background-color: #ff00ff !important;
-            /* MAGENTA CHILLÓN */
+            background: #f0f2f5;
         }
 
         #map {
@@ -178,35 +181,36 @@
         }
 
         /* Navegación Principal */
+        /* Navegación Principal */
         .main-nav {
             position: absolute;
-            top: 15px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 2000;
-            background: #ff0000;
-            /* CAMBIO RADICAL: ROJO BRILLANTE */
-            padding: 12px 30px;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 10px 25px;
+            border-radius: 50px;
             display: flex;
-            gap: 20px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
-            border: 4px solid white;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
         .nav-link {
             text-decoration: none;
-            color: white !important;
-            font-size: 18px;
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 8px 20px;
-            border-radius: 5px;
+            color: #333 !important;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 25px;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 0, 0, 0.3);
+            text-transform: none;
+            background: transparent;
         }
 
         .test-banner {
@@ -240,16 +244,15 @@
 
         .layer-controls {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 20px;
+            left: 20px;
             z-index: 1000;
-            background: #ffff00;
-            /* CAMBIO RADICAL: AMARILLO */
-            padding: 25px;
-            border-radius: 0;
-            box-shadow: 0 0 20px black;
-            border: 5px solid red;
-            max-width: 300px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 250px;
+            border: 1px solid #ddd;
         }
 
         .nav-link:hover {
@@ -266,9 +269,6 @@
 </head>
 
 <body>
-    <!-- BANNER DE PRUEBA RADICAL -->
-    <div class="test-banner">ACTUALIZACIÓN V2.1 - SI VES ESTO, FUNCIONA</div>
-
     <!-- Navegación -->
     <nav class="main-nav">
         <a href="/" class="nav-link active">🌍 Visor GIS</a>
@@ -289,7 +289,7 @@
 
     <!-- Panel de información -->
     <div class="info-panel">
-        <h4>🚀 GIS Viewer v2.0</h4>
+        <h4>🌍 VISOR GIS - V2.5 (Sincronizado)</h4>
         <ul>
             <li>
                 <strong>FlatGeobuf:</strong>
