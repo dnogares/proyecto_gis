@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor GIS - Plataforma GIS</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .home-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .layer-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .layer-control h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            color: #2d3748;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .layer-group {
+            margin-bottom: 20px;
+        }
+
+        .layer-group h4 {
+            font-size: 0.85rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .layer-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .layer-item label {
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #2d3748;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/" class="home-button">
+        <i class="fas fa-home"></i>
+        <span>Inicio</span>
+    </a>
+
+    <div class="layer-control">
+        <h3><i class="fas fa-layer-group"></i> Control de Capas</h3>
+
+        <div class="layer-group">
+            <h4>Capas Ambientales</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-rednatura" onchange="toggleLayer('rednatura', this.checked)">
+                <label for="layer-rednatura">Red Natura 2000</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-espaciosnaturales"
+                    onchange="toggleLayer('espaciosnaturales', this.checked)">
+                <label for="layer-espaciosnaturales">Espacios Protegidos</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-viaspocuarias" onchange="toggleLayer('viaspocuarias', this.checked)">
+                <label for="layer-viaspocuarias">Vías Pecuarias</label>
+            </div>
+        </div>
+
+        <div class="layer-group">
+            <h4>Hidrología</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-zonasinundables"
+                    onchange="toggleLayer('zonasinundables', this.checked)">
+                <label for="layer-zonasinundables">Zonas Inundables</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="layer-masasagua" onchange="toggleLayer('masasagua', this.checked)">
+                <label for="layer-masasagua">Masas de Agua</label>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/flatgeobuf@3.27.2/dist/flatgeobuf-geojson.min.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="/static/js/viewer.js"></script>
+
+    <script>
+        let gisViewer;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Iniciando Visor GIS...');
+
+            // Inicializar visor
+            gisViewer = new GISViewer('map');
+
+            console.log('✅ Visor GIS cargado');
+        });
+
+        function toggleLayer(layerId, visible) {
+            if (gisViewer) {
+                gisViewer.toggleLayer(layerId, visible);
+            }
+        }
+    </script>
+</body>
+
+</html>

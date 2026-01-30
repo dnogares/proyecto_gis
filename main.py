@@ -1026,23 +1026,19 @@ app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
 
 @app.get("/")
 async def read_index():
-    """Página principal - Portal Limpio"""
-    return FileResponse('templates/index_limpio.html')
+    """Página principal - Dashboard de Módulos"""
+    return FileResponse('templates/index.html')
 
 @app.get("/visor.html")
 async def read_visor():
-    """Visor interactivo de mapas"""
-    return FileResponse('templates/index_limpio.html')
+    """Visor Catastral - Interfaz de 3 paneles"""
+    return FileResponse('templates/visor.html')
 
-@app.get("/index.html")
-async def read_index_html():
-    """Página de inicio del sistema"""
-    return FileResponse('templates/index_limpio.html')
+@app.get("/gis.html")
+async def read_gis():
+    """Visor GIS - Visualización pura de capas"""
+    return FileResponse('templates/gis.html')
 
-@app.get("/visor_catastral.html")
-async def read_visor_catastral():
-    """Visor catastral avanzado"""
-    return FileResponse('templates/index_limpio.html')
 
 @app.get("/catastro.html")
 async def read_catastro():

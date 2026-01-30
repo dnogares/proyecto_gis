@@ -1,1511 +1,303 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visor Catastral</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma GIS Profesional</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .main-container {
-      width: 90vw;
-      height: 90vh;
-      max-width: 1200px;
-      max-height: 800px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-      display: grid;
-      grid-template-columns: 280px 1fr 320px;
-      gap: 16px;
-      padding: 20px;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            color: #fff;
+        }
 
-    #map {
-      grid-column: 2;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      z-index: 1;
-    }
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
 
-    .left-panel {
-      grid-column: 1;
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-      color: #0f172a;
-      font-size: 13px;
-      overflow-y: auto;
-    }
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
 
-    .side-panel {
-      grid-column: 3;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-      color: #0f172a;
-      font-size: 13px;
-      overflow-y: auto;
-    }
+        .logo i {
+            font-size: 48px;
+            color: #fff;
+        }
 
-    .panel-section {
-      margin-bottom: 20px;
-    }
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
 
-    .panel-section h3 {
-      margin: 0 0 12px 0;
-      font-size: 16px;
-      color: #1e293b;
-      font-weight: 600;
-    }
+        .subtitle {
+            font-size: 1.1rem;
+            font-weight: 400;
+            opacity: 0.95;
+            margin-top: 10px;
+        }
 
-    .panel-section h4 {
-      margin: 0 0 8px 0;
-      font-size: 14px;
-      color: #1e293b;
-      font-weight: 600;
-    }
+        .modules-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
 
-    .lp-btn {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      background: #fff;
-      cursor: pointer;
-      font-weight: 500;
-      margin-bottom: 8px;
-      transition: all 0.3s ease;
-    }
+        .module-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
 
-    .lp-btn:hover {
-      background: rgba(59, 130, 246, 0.1);
-      transform: translateY(-1px);
-    }
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
 
-    .lp-small {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
 
-    .lp-small input {
-      flex: 1;
-    }
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
 
-    input[type="text"], textarea {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #e2e8f0;
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
+        .module-card.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
 
-    .tool-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+        .module-card.primary .module-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
 
-    .tool-btn {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      background: white;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      font-size: 13px;
-      color: #1e293b;
-    }
+        .module-card.primary .module-title {
+            color: white;
+        }
 
-    .tool-btn:hover {
-      background: #3b82f6;
-      color: white;
-      transform: translateY(-1px);
-    }
+        .module-card.primary .module-description {
+            color: rgba(255, 255, 255, 0.9);
+        }
 
-    .tool-btn.danger {
-      background: #fef2f2;
-      color: #ef4444;
-    }
+        .module-card.primary .module-button {
+            background: white;
+            color: #667eea;
+        }
 
-    .tool-btn.danger:hover {
-      background: #ef4444;
-      color: white;
-    }
+        .module-card.primary .module-button:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
 
-    .tab-nav {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 8px;
-    }
+        .module-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            transition: transform 0.3s ease;
+        }
 
-    .tab-btn {
-      padding: 6px 12px;
-      border: none;
-      background: transparent;
-      color: #64748b;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-radius: 6px 6px 0 0;
-      font-size: 12px;
-    }
+        .module-card:hover .module-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
 
-    .tab-btn:hover {
-      background: rgba(59, 130, 246, 0.1);
-      color: #1e293b;
-    }
+        .module-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
 
-    .tab-btn.active {
-      background: #3b82f6;
-      color: white;
-    }
+        .module-description {
+            font-size: 0.95rem;
+            color: #718096;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            min-height: 60px;
+        }
 
-    .tab-content {
-      display: none;
-    }
+        .module-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
 
-    .tab-content.active {
-      display: block;
-    }
+        .module-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
 
-    .action-btn {
-      padding: 8px 12px;
-      background: rgba(59, 130, 246, 0.8);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 12px;
-      transition: all 0.3s ease;
-    }
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            opacity: 0.9;
+            font-size: 0.9rem;
+            animation: fadeIn 1s ease-out 0.5s both;
+        }
 
-    .action-btn:hover {
-      background: rgba(59, 130, 246, 0.9);
-      transform: translateY(-1px);
-    }
-
-    .action-btn.error {
-      background: rgba(239, 68, 68, 0.8);
-    }
-
-    .action-btn.error:hover {
-      background: rgba(239, 68, 68, 0.9);
-    }
-
-    .action-btn.info {
-      background: rgba(59, 130, 246, 0.8);
-    }
-
-    .upload-btn {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 12px;
-      transition: all 0.3s ease;
-      margin-bottom: 6px;
-    }
-
-    .upload-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .file-input {
-      display: none;
-    }
-
-    #measurement-result {
-      display: none;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 8px;
-      padding: 10px;
-      margin-top: 8px;
-      font-size: 12px;
-      border-left: 4px solid #3b82f6;
-    }
-
-    #measurement-result.active {
-      display: block;
-    }
-  </style>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
-  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-  <script>
-    // Variable global para el mapa
-    let map;
-    let drawnItems;
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Inicializar el mapa con seguridad
-        map = L.map('map').setView([40.4167, -3.7033], 6);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        // 2. Configurar herramientas de dibujo
-        drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
-
-        const drawControl = new L.Control.Draw({
-            edit: { featureGroup: drawnItems },
-            draw: { polygon: true, polyline: false, rectangle: true, circle: false, marker: false }
-        });
-        map.addControl(drawControl);
-
-        // SOLUCIÓN AL ERROR 'ON' de null: El evento se asigna DESPUÉS de crear el mapa
-        map.on(L.Draw.Event.CREATED, function (e) {
-            drawnItems.clearLayers(); // Limpiar dibujos previos
-            const layer = e.layer;
-            drawnItems.addLayer(layer);
-            
-            // Aquí llamaríamos a la función de análisis que vimos antes
-            const geometria = layer.toGeoJSON().geometry;
-            console.log("Geometría lista para analizar:", geometria);
-        });
-
-        console.log("✅ Mapa y controles de dibujo listos");
-        
-        // Cargar la lista de capas automáticamente
-        await cargarListaCapas();
-    });
-
-    // 2. SOLUCIÓN AL ERROR 'Unexpected token g' (Lectura binaria de FGB)
-    async function cargarCapaIndividual(nombre, url) {
-        console.log(`🔄 Descargando binario FGB: ${nombre}`);
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Error en la descarga");
-
-            // IMPORTANTE: flatgeobuf.deserialize espera el body de la respuesta
-            const iter = flatgeobuf.deserialize(response.body);
-            
-            const fgLayer = L.geoJSON(null, {
-                style: { color: '#3b82f6', weight: 2, fillOpacity: 0.3 },
-                onEachFeature: (feature, layer) => {
-                    layer.bindPopup(`<b>Capa:</b> ${nombre}`);
-                }
-            }).addTo(map);
-
-            // Leemos el stream binario
-            for await (let feature of iter) {
-                fgLayer.addData(feature);
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
             }
-            
-            console.log(`✅ Capa ${nombre} renderizada con éxito`);
-            map.fitBounds(fgLayer.getBounds());
-
-        } catch (error) {
-            console.error("❌ Fallo crítico cargando FGB:", error);
-            alert("El archivo no es un JSON válido, pero el cargador binario también falló. Revisa la consola.");
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-    }
 
-    async function cargarListaCapas() {
-        const res = await fetch('/api/v1/capas/fgb');
-        const data = await res.json();
-        const container = document.getElementById('capasList'); // Asegúrate de que este ID existe
-        
-        if (data.capas) {
-            data.capas.forEach(capa => {
-                const btn = document.createElement('button');
-                btn.className = "btn-capa";
-                btn.innerHTML = `<span>📁</span> ${capa.nombre}`;
-                btn.onclick = () => cargarCapaIndividual(capa.nombre, capa.url);
-                container.appendChild(btn);
-            });
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-    }
 
-    async function cargarReferencia() {
-      const ref = document.getElementById('refInput').value.trim();
-      if (!ref) {
-        alert('Por favor, introduce una referencia catastral');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
-        if (!response.ok) {
-          alert('Referencia no encontrada');
-          return;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
-        
-        const geojson = await response.json();
-        
-        L.geoJSON(geojson, {
-          style: {
-            color: '#e74c3c',
-            weight: 3,
-            fillOpacity: 0.3
-          }
-        }).addTo(map);
-        
-        // Centrar mapa en la referencia
-        const bounds = L.geoJSON(geojson).getBounds();
-        map.fitBounds(bounds);
-        
-      } catch (error) {
-        console.error('Error cargando referencia:', error);
-        alert('Error cargando referencia');
-      }
-    }
 
-    async function cargarCapas() {
-      // Esta función ahora carga las capas locales
-      await cargarListaCapas();
-    }
+        @media (max-width: 768px) {
+            .logo h1 {
+                font-size: 2rem;
+            }
 
-    // Funciones adicionales para compatibilidad con el HTML existente
-    function cargarReferenciaCatastral() {
-      cargarReferencia();
-    }
-  </script>
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .modules-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .module-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
 </head>
-
 <body>
-  <div class="main-container">
-    <!-- PANEL IZQUIERDO -->
-    <div class="left-panel">
-      <h3>🏠 Visor Catastral</h3>
-
-      <div class="panel-section">
-        <h4>📍 Referencia Catastral</h4>
-        <div class="lp-small">
-          <input id="refInput" type="text" placeholder="Ej: 8884601WF4788S0020LL" />
-          <button class="lp-btn" onclick="cargarReferenciaCatastral()">Cargar</button>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-map-marked-alt"></i>
+            <h1>GIS Platform</h1>
         </div>
-
-        <div style="margin-top:12px;">
-          <label style="font-size:12px; color:#64748b; display:block; margin-bottom:6px;">
-            📄 Cargar lote desde archivo (TXT/CSV):
-          </label>
-          <input type="file" id="refs-file-input" accept=".txt,.csv" style="display:none;">
-          <button class="upload-btn" style="width:100%; font-size:12px;"
-            onclick="document.getElementById('refs-file-input').click()">
-            📁 Seleccionar archivo de referencias
-          </button>
-          <div id="refs-file-list" style="margin-top:8px; font-size:12px; color:#64748b;"></div>
-        </div>
-      </div>
-
-      <div class="panel-section">
-        <h4>📁 Cargar Archivos</h4>
-        <input type="file" id="file-input" class="file-input" multiple accept=".kml,.gml,.geojson,.json,.shp,.zip">
-        <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-          📁 Seleccionar Archivos
-        </button>
-        <div style="font-size:11px; color:#64748b; margin-top:4px;">KML, GML, GeoJSON, SHP, ZIP</div>
-        <div id="file-list" style="margin-top:8px; font-size:12px; color:#64748b;"></div>
-      </div>
-
-      <div class="panel-section">
-        <h4>📐 Herramientas</h4>
-        <div class="tool-grid">
-          <button class="tool-btn" onclick="toggleMeasureDistance()">
-            📏 Distancia
-          </button>
-          <button class="tool-btn" onclick="toggleMeasureArea()">
-            📐 Área
-          </button>
-          <button class="tool-btn danger" onclick="limpiarMapa()">
-            🗑️ Limpiar
-          </button>
-        </div>
-        <div id="measurement-result"></div>
-      </div>
+        <p class="subtitle">Herramientas avanzadas para análisis geográfico y catastral</p>
     </div>
 
-    <!-- MAPA CENTRAL -->
-    <div id="map"></div>
-
-    <!-- PANEL DERECHO -->
-    <div class="side-panel">
-      <div class="panel-section">
-        <div class="tab-nav">
-          <button class="tab-btn active" onclick="switchInternalTab('referencia')">Referencia</button>
-          <button class="tab-btn" onclick="switchInternalTab('capas')">Capas</button>
-          <button class="tab-btn" onclick="switchInternalTab('urbanismo')">Urbanismo</button>
-          <button class="tab-btn" onclick="switchInternalTab('afecciones')">Afecciones</button>
-          <button class="tab-btn" onclick="switchInternalTab('pdf')">PDF</button>
-        </div>
-      </div>
-
-      <div id="tab-referencia" class="tab-content active">
-        <div class="panel-section">
-          <h4>📍 Datos de Referencia</h4>
-          <div id="refDatos" style="font-size:12px; color:#64748b;">
-            Carga una referencia para ver sus datos
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-capas" class="tab-content">
-        <div class="panel-section">
-          <h4>🗺️ Capas Disponibles</h4>
-          <button class="action-btn" onclick="cargarCapasDisponibles()" style="width: 100%; margin-bottom: 8px;">
-            🔄 Cargar Lista de Capas
-          </button>
-          <div id="capasContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
-            <div style="font-size:12px; color:#999;">Haz clic en "Cargar Lista de Capas" para ver las disponibles</div>
-          </div>
-          <button class="action-btn" onclick="cargarCapasSeleccionadas()" style="width: 100%; margin-top: 8px;">
-            📥 Cargar Capas Seleccionadas
-          </button>
-        </div>
-        
-        <div class="panel-section">
-          <h4>🎛️ Control de Capas</h4>
-          <div id="capasCargadas" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
-            <div style="font-size:12px; color:#999;">No hay capas cargadas</div>
-          </div>
-          <button class="action-btn error" onclick="limpiarCapasCargadas()" style="width: 100%; margin-top: 8px;">
-            🗑️ Limpiar Capas
-          </button>
-        </div>
-      </div>
-
-      <div id="tab-urbanismo" class="tab-content">
-        <div class="panel-section">
-          <h4>🏙️ Análisis Urbanístico</h4>
-          <div style="margin-bottom: 12px;">
-            <label style="font-weight: bold; color: #2b7db3; display: block; margin-bottom: 4px;">📍 Referencia catastral:</label>
-            <div style="display: flex; gap: 6px;">
-              <input id="urbanismoRefInput" type="text" placeholder="Ej: 8884601WF4788S0020LL" 
-                     style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size:12px;">
-              <button class="action-btn info" onclick="analizarUrbanismoDesdeRef()">Analizar</button>
+    <div class="modules-container">
+        <!-- Visor Catastral -->
+        <div class="module-card primary" onclick="window.location.href='/visor.html'">
+            <div class="module-icon">
+                <i class="fas fa-home"></i>
             </div>
-          </div>
-          <div style="margin-bottom: 12px;">
-            <label style="font-weight: bold; color: #2b7db3; display: block; margin-bottom: 4px;">📁 Archivo vectorial:</label>
-            <input id="fileUrbanismo" type="file" accept=".kml,.gml,.geojson,.json,.gpkg"
-                   style="width: 100%; margin-bottom: 6px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size:12px;" />
-            <button class="action-btn" style="width: 100%;" onclick="analizarUrbanismoDesdeArchivo()">Cargar y Analizar</button>
-          </div>
-          <div id="urbanismoResult" style="margin-top:8px; font-size:12px;"></div>
+            <h2 class="module-title">Visor Catastral</h2>
+            <p class="module-description">
+                Visor interactivo completo con herramientas de análisis catastral, gestión de referencias y visualización de capas.
+            </p>
+            <button class="module-button">Abrir Visor</button>
         </div>
-      </div>
 
-      <div id="tab-afecciones" class="tab-content">
-        <div class="panel-section">
-          <h4>⚠️ Análisis de Afecciones</h4>
-          <div style="margin-bottom: 12px;">
-            <label style="font-weight: bold; color: #e74c3c; display: block; margin-bottom: 4px;">📍 Referencia catastral:</label>
-            <div style="display: flex; gap: 6px;">
-              <input id="afeccionesRefInput" type="text" placeholder="Ej: 8884601WF4788S0020LL" 
-                     style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size:12px;">
-              <button class="action-btn error" onclick="analizarAfeccionesDesdeRef()">Analizar</button>
+        <!-- Visor GIS -->
+        <div class="module-card" onclick="window.location.href='/gis.html'">
+            <div class="module-icon">
+                <i class="fas fa-map"></i>
             </div>
-          </div>
-          <div style="margin-bottom: 12px;">
-            <label style="font-weight: bold; color: #e74c3c; display: block; margin-bottom: 4px;">📁 Archivo vectorial:</label>
-            <input id="fileAfecciones" type="file" multiple accept=".kml,.gml,.geojson,.json,.gpkg"
-                   style="width: 100%; margin-bottom: 6px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size:12px;" />
-            <button class="action-btn" style="width: 100%;" onclick="analizarAfeccionesDesdeArchivo()">Cargar y Analizar</button>
-          </div>
-          <div id="afeccionesResult" style="margin-top:8px; font-size:12px;"></div>
+            <h2 class="module-title">Visor GIS</h2>
+            <p class="module-description">
+                Mapa interactivo con herramientas de medición y análisis geográfico avanzado.
+            </p>
+            <button class="module-button">Abrir Visor</button>
         </div>
-      </div>
 
-      <div id="tab-pdf" class="tab-content">
-        <div class="panel-section">
-          <h4>📄 Generar Informe</h4>
-          <button class="action-btn" onclick="generarPDF()">Generar PDF</button>
-          <div id="pdfResult" style="margin-top:8px; font-size:12px;"></div>
+        <!-- Análisis -->
+        <div class="module-card" onclick="window.location.href='/analisis.html'">
+            <div class="module-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h2 class="module-title">Análisis</h2>
+            <p class="module-description">
+                Herramientas de análisis espacial, estadísticas y procesamiento de datos geográficos.
+            </p>
+            <button class="module-button">Ir a Análisis</button>
         </div>
-      </div>
+
+        <!-- Catastro -->
+        <div class="module-card" onclick="window.location.href='/catastro.html'">
+            <div class="module-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h2 class="module-title">Catastro</h2>
+            <p class="module-description">
+                Consulta y análisis de información catastral con herramientas especializadas.
+            </p>
+            <button class="module-button">Ir a Catastro</button>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // Variables globales
-    let map = null;
-    let layersGroup = null;
-    let measurementLayer = null;
-    let measurementMode = null;
-    let measurementPoints = [];
-    let layers = {
-      catastro: null,
-      ortofoto: null,
-      parcela: null
-    };
-
-    // Estado
-    const state = {
-      referencias: [],
-      resultsUrbanismo: {},
-      resultsAfecciones: {},
-      capasDisponibles: [],
-      capasCargadas: new Map()
-    };
-
-    // Inicialización
-    document.addEventListener('DOMContentLoaded', () => {
-      initMap();
-      setupFileUpload();
-      switchInternalTab('referencia');
-    });
-
-    // Funciones de tabs
-    function switchInternalTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(el => {
-        el.style.display = 'none';
-        el.classList.remove('active');
-      });
-
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-
-      const tabEl = document.getElementById(`tab-${tab}`);
-      if (tabEl) {
-        tabEl.style.display = 'block';
-        tabEl.classList.add('active');
-      }
-
-      const btns = document.querySelectorAll('.tab-btn');
-      const tabMap = { 'referencia': 0, 'capas': 1, 'urbanismo': 2, 'afecciones': 3, 'pdf': 4 };
-      if (tabMap[tab] !== undefined) {
-        btns[tabMap[tab]].classList.add('active');
-      }
-    }
-
-    // Inicializar mapa
-    function initMap() {
-      if (map) return;
-
-      map = L.map('map').setView([40.0, -3.7], 6);
-      layersGroup = L.layerGroup().addTo(map);
-      measurementLayer = L.layerGroup().addTo(map);
-
-      // Capa base OSM
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19
-      }).addTo(map);
-
-      // Catastro WMS
-      layers.catastro = L.tileLayer.wms(
-        'https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx',
-        { layers: 'CP.CadastralParcel', format: 'image/png', transparent: true, opacity: 0.8 }
-      ).addTo(map);
-
-      // PNOA Ortofoto
-      layers.ortofoto = L.tileLayer.wms(
-        'https://www.ign.es/wms-inspire/pnoa-ma',
-        { layers: 'OI.OrthoimageCoverage', format: 'image/png', transparent: true, opacity: 0.7 }
-      );
-
-      // Event listeners para mediciones
-      map.on('click', handleMapClick);
-      map.on('dblclick', handleMapDblClick);
-
-      // Añadir controles de dibujo
-      const drawnItems = new L.FeatureGroup();
-      map.addLayer(drawnItems);
-
-      const drawControl = new L.Control.Draw({
-        draw: {
-          polygon: {
-            allowIntersection: false,
-            drawError: {
-              color: '#e1e100',
-              message: '<strong>Error:</strong> ¡Las formas no pueden intersectarse!'
-            },
-            shapeOptions: {
-              color: '#3388ff',
-              weight: 3,
-              opacity: 0.8,
-              fill: true,
-              fillColor: '#3388ff',
-              fillOpacity: 0.2
-            }
-          },
-          polyline: false,
-          circle: false,
-          rectangle: false,
-          marker: false,
-          circlemarker: false
-        },
-        edit: {
-          featureGroup: drawnItems,
-          remove: true
-        }
-      });
-      map.addControl(drawControl);
-
-      console.log('✅ Mapa inicializado con controles de dibujo');
-    }
-
-    // Cargar referencia catastral
-    async function cargarReferenciaCatastral() {
-      const ref = document.getElementById('refInput').value.trim();
-      if (!ref) {
-        alert('Por favor, introduce una referencia catastral');
-        return;
-      }
-
-      try {
-        console.log(`🔍 Cargando referencia: ${ref}`);
-
-        // Usar la API del backend
-        const coordsResponse = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
-        if (!coordsResponse.ok) {
-          alert(`❌ Referencia no encontrada: ${ref}`);
-          return;
-        }
-
-        const coordsData = await coordsResponse.json();
-        console.log('📍 Coordenadas obtenidas:', coordsData);
-
-        // Remover parcela anterior si existe
-        if (layers.parcela) {
-          map.removeLayer(layers.parcela);
-          layers.parcela = null;
-        }
-
-        // Crear capa de parcela
-        if (coordsData && coordsData.type === 'FeatureCollection' && Array.isArray(coordsData.features) && coordsData.features.length > 0) {
-          const feat = coordsData.features[0];
-          if (feat.geometry && (feat.geometry.type === 'Polygon' || feat.geometry.type === 'MultiPolygon')) {
-            const parcelaLayer = L.geoJSON(feat, {
-              style: { color: '#ef4444', weight: 3, fillOpacity: 0.06 }
-            }).addTo(map);
-            layers.parcela = parcelaLayer;
-
-            // Ajustar vista
-            if (parcelaLayer.getBounds) map.fitBounds(parcelaLayer.getBounds());
-
-            // Calcular área
-            let areaText = '';
-            try {
-              const area = L.GeometryUtil.geodesicArea(feat.geometry.coordinates[0].map(c => L.latLng(c[1], c[0])));
-              if (area) {
-                areaText = formatArea(area);
-                const measEl = document.getElementById('measurement-result');
-                if (measEl) {
-                  measEl.textContent = `📐 Área: ${areaText}`;
-                  measEl.classList.add('active');
-                }
-              }
-            } catch (err) { console.warn(err); }
-
-            alert(`✅ Parcela cargada: ${ref}${areaText ? '\n' + areaText : ''}`);
-            updateRefDatos(ref, coordsData);
-
-          } else if (feat.geometry && feat.geometry.type === 'Point') {
-            const [lon, lat] = feat.geometry.coordinates;
-            const marker = L.marker([lat, lon], { title: `Referencia: ${ref}` }).addTo(map);
-            const circle = L.circle([lat, lon], { color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: 50 }).addTo(map);
-            const parcelaLayer = L.layerGroup([marker, circle]);
-            layers.parcela = parcelaLayer;
-            map.setView([lat, lon], 18);
-            alert(`✅ Referencia catastral cargada:\n${ref}\n\nCoordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
-            updateRefDatos(ref, coordsData);
-          }
-
-          // Actualizar estado
-          if (!state.referencias.includes(ref)) {
-            state.referencias.push(ref);
-          }
-
-        } else {
-          alert(`❌ Formato de coordenadas inválido para referencia: ${ref}`);
-        }
-
-      } catch (e) {
-        console.error('❌ Error cargando referencia:', e);
-        alert(`❌ Error cargando referencia: ${e.message}`);
-      }
-    }
-
-    // Actualizar datos de referencia
-    function updateRefDatos(ref, data) {
-      const refDatos = document.getElementById('refDatos');
-      let html = `<strong>Referencia:</strong> ${ref}<br><br>`;
-      
-      if (data.features && data.features[0] && data.features[0].properties) {
-        const props = data.features[0].properties;
-        Object.entries(props).forEach(([key, value]) => {
-          html += `<strong>${key}:</strong> ${value}<br>`;
-        });
-      }
-      
-      refDatos.innerHTML = html;
-    }
-
-    // Funciones de medición
-    function toggleMeasureDistance() {
-      if (measurementMode === 'distance') {
-        measurementMode = null;
-        measurementPoints = [];
-        document.querySelectorAll('.tool-btn')[0].classList.remove('active');
-      } else {
-        measurementMode = 'distance';
-        measurementPoints = [];
-        clearMeasurements();
-        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tool-btn')[0].classList.add('active');
-        alert('📏 Haz clic para marcar puntos. Doble clic para terminar.');
-      }
-    }
-
-    function toggleMeasureArea() {
-      if (measurementMode === 'area') {
-        measurementMode = null;
-        measurementPoints = [];
-        document.querySelectorAll('.tool-btn')[1].classList.remove('active');
-      } else {
-        measurementMode = 'area';
-        measurementPoints = [];
-        clearMeasurements();
-        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tool-btn')[1].classList.add('active');
-        alert('📐 Haz clic para marcar vértices. Doble clic para cerrar.');
-      }
-    }
-
-    function handleMapClick(e) {
-      if (!measurementMode) return;
-
-      const pt = e.latlng;
-      measurementPoints.push([pt.lat, pt.lng]);
-
-      L.circleMarker(pt, { radius: 5, color: '#fff', weight: 2, fillColor: '#2b7db3', fillOpacity: 1 }).addTo(measurementLayer);
-
-      if (measurementPoints.length >= 2) {
-        const prev = measurementPoints[measurementPoints.length - 2];
-        const dist = map.distance(prev, [pt.lat, pt.lng]);
-
-        L.polyline([prev, [pt.lat, pt.lng]], { color: '#2b7db3', weight: 2, dashArray: '5,5' }).addTo(measurementLayer);
-
-        if (measurementMode === 'distance') {
-          const total = measurementPoints.reduce((sum, p, i) => {
-            if (i === 0) return 0;
-            return sum + map.distance(measurementPoints[i - 1], p);
-          }, 0);
-
-          let distanceText;
-          if (total < 1000) {
-            distanceText = `📏 Distancia: ${total.toFixed(1)} m`;
-          } else {
-            distanceText = `📏 Distancia: ${(total / 1000).toFixed(2)} km`;
-          }
-          showMeasurement(distanceText);
-
-        } else if (measurementMode === 'area' && measurementPoints.length >= 3) {
-          if (window.tempShape) {
-            measurementLayer.removeLayer(window.tempShape);
-          }
-
-          window.tempShape = L.polygon(measurementPoints, {
-            color: '#10b981',
-            fillColor: '#10b981',
-            fillOpacity: 0.3,
-            weight: 3
-          }).addTo(measurementLayer);
-
-          const area = calcArea(measurementPoints);
-          const areaText = `📐 Área: ${formatArea(area)}`;
-          showMeasurement(areaText);
-        }
-      }
-    }
-
-    function handleMapDblClick(e) {
-      if (!measurementMode) return;
-      measurementMode = null;
-      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    }
-
-    function calcArea(points) {
-      if (window.L && window.L.GeometryUtil) {
-        return L.GeometryUtil.geodesicArea(points);
-      }
-
-      const latToM = 111320;
-      const avgLat = points.reduce((s, p) => s + p[0], 0) / points.length;
-      const lngToM = latToM * Math.cos(avgLat * Math.PI / 180);
-
-      let area = 0;
-      for (let i = 0; i < points.length; i++) {
-        const j = (i + 1) % points.length;
-        const xi = points[i][1] * lngToM;
-        const yi = points[i][0] * latToM;
-        const xj = points[j][1] * lngToM;
-        const yj = points[j][0] * latToM;
-        area += xi * yj - xj * yi;
-      }
-      return Math.abs(area / 2);
-    }
-
-    function formatArea(area) {
-      if (area < 1000) {
-        return `${area.toFixed(1)} m²`;
-      } else if (area < 10000) {
-        return `${(area / 1000).toFixed(2)} mil m²`;
-      } else if (area < 1000000) {
-        return `${(area / 10000).toFixed(2)} ha`;
-      } else {
-        return `${(area / 1000000).toFixed(2)} km²`;
-      }
-    }
-
-    function showMeasurement(text) {
-      const el = document.getElementById('measurement-result');
-      el.textContent = text;
-      el.classList.add('active');
-    }
-
-    function clearMeasurements() {
-      measurementLayer.clearLayers();
-      measurementPoints = [];
-      measurementMode = null;
-      document.getElementById('measurement-result').classList.remove('active');
-      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-
-      if (window.tempShape) {
-        measurementLayer.removeLayer(window.tempShape);
-        window.tempShape = null;
-      }
-    }
-
-    function limpiarMapa() {
-      clearMeasurements();
-      
-      if (layers.parcela) {
-        map.removeLayer(layers.parcela);
-        layers.parcela = null;
-      }
-
-      if (window.loadedLayers && window.loadedLayers.length > 0) {
-        window.loadedLayers.forEach(layer => {
-          map.removeLayer(layer);
-        });
-        window.loadedLayers = [];
-      }
-
-      document.getElementById('refInput').value = '';
-      document.getElementById('refDatos').innerHTML = 'Carga una referencia para ver sus datos';
-      
-      console.log('Mapa limpiado');
-    }
-
-    // Configurar carga de archivos
-    function setupFileUpload() {
-      const fileInput = document.getElementById('file-input');
-      const fileList = document.getElementById('file-list');
-      const refsFileInput = document.getElementById('refs-file-input');
-      const refsFileList = document.getElementById('refs-file-list');
-
-      fileInput.addEventListener('change', function(e) {
-        const files = e.target.files;
-        if (files.length > 0) {
-          fileList.innerHTML = `<strong>Archivos seleccionados:</strong><br>`;
-          for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            fileList.innerHTML += `📄 ${file.name} (${(file.size / 1024).toFixed(1)}KB)<br>`;
-          }
-          handleFiles(files);
-        }
-      });
-
-      refsFileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          refsFileList.innerHTML = `📄 ${file.name} (${(file.size / 1024).toFixed(1)}KB)<br>`;
-          handleRefsFile(file);
-        }
-      });
-    }
-
-    // Procesar archivo de referencias
-    function handleRefsFile(file) {
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-        try {
-          const content = e.target.result;
-          const extension = file.name.split('.').pop().toLowerCase();
-
-          let referencias = [];
-
-          if (extension === 'csv') {
-            const lines = content.split('\n').filter(line => line.trim());
-            referencias = lines.map(line => {
-              const cols = line.split(',');
-              return cols[0].trim().replace(/["']/g, '');
-            }).filter(ref => ref.length > 0);
-          } else if (extension === 'txt') {
-            referencias = content.split('\n')
-              .map(line => line.trim())
-              .filter(line => line.length > 0);
-          }
-
-          const refsFileList = document.getElementById('refs-file-list');
-          refsFileList.innerHTML = `<strong>📋 ${referencias.length} referencias encontradas:</strong><br>`;
-
-          const preview = referencias.slice(0, 5).join('<br>');
-          refsFileList.innerHTML += preview;
-
-          if (referencias.length > 5) {
-            refsFileList.innerHTML += `<br>... y ${referencias.length - 5} más`;
-          }
-
-          refsFileList.innerHTML += `<br><br><button class="upload-btn" style="font-size:11px; padding:4px 8px;" onclick="cargarLoteReferencias(${JSON.stringify(referencias)})">🚀 Cargar todas</button>`;
-
-          state.loteReferencias = referencias;
-
-        } catch (error) {
-          console.error('Error procesando archivo:', error);
-          const refsFileList = document.getElementById('refs-file-list');
-          refsFileList.innerHTML = `❌ Error: ${error.message}`;
-        }
-      };
-
-      reader.readAsText(file);
-    }
-
-    // Cargar lote de referencias
-    async function cargarLoteReferencias(referencias) {
-      if (!referencias || referencias.length === 0) {
-        alert('No hay referencias para cargar');
-        return;
-      }
-
-      const refsFileList = document.getElementById('refs-file-list');
-      refsFileList.innerHTML = `⏳ Cargando ${referencias.length} referencias...`;
-
-      let cargadas = 0;
-      let errores = 0;
-
-      function cargarSiguiente() {
-        if (cargadas < referencias.length) {
-          const ref = referencias[cargadas];
-          cargarReferenciaCatastralInterna(ref, function (success) {
-            if (success) {
-              cargadas++;
-            } else {
-              errores++;
-            }
-
-            const progress = Math.round((cargadas + errores) / referencias.length * 100);
-            refsFileList.innerHTML = `⏳ Progreso: ${progress}% (${cargadas + errores}/${referencias.length})<br>✅ Cargadas: ${cargadas} | ❌ Errores: ${errores}`;
-
-            setTimeout(cargarSiguiente, 100);
-          });
-        } else {
-          refsFileList.innerHTML = `🎉 ¡Completado!<br>✅ Cargadas: ${cargadas}<br>❌ Errores: ${errores}`;
-        }
-      }
-
-      cargarSiguiente();
-    }
-
-    // Función interna para cargar referencia (usada por el lote)
-    async function cargarReferenciaCatastralInterna(ref, callback) {
-      try {
-        const coordsResponse = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
-        if (!coordsResponse.ok) {
-          if (callback) callback(false);
-          return;
-        }
-
-        const coordsData = await coordsResponse.json();
-
-        if (coordsData && coordsData.type === 'FeatureCollection' && Array.isArray(coordsData.features) && coordsData.features.length > 0) {
-          const feat = coordsData.features[0];
-          if (feat.geometry && (feat.geometry.type === 'Polygon' || feat.geometry.type === 'MultiPolygon')) {
-            const parcelaLayer = L.geoJSON(feat, {
-              style: { color: '#ef4444', weight: 2, fillOpacity: 0.06 }
-            }).addTo(map);
-            
-            if (!window.loadedLayers) window.loadedLayers = [];
-            window.loadedLayers.push(parcelaLayer);
-
-            if (callback) callback(true);
-          }
-        }
-
-        if (callback) callback(false);
-
-      } catch (e) {
-        console.error('Error:', e);
-        if (callback) callback(false);
-      }
-    }
-
-    // Procesar archivos geográficos
-    async function handleFiles(files) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const reader = new FileReader();
-
-        reader.onload = function(e) {
-          try {
-            const content = e.target.result;
-            const extension = file.name.split('.').pop().toLowerCase();
-
-            if (extension === 'geojson' || extension === 'json') {
-              const geojson = JSON.parse(content);
-              const layer = L.geoJSON(geojson, {
-                style: {
-                  color: '#ef4444',
-                  weight: 2,
-                  fillOpacity: 0.3
-                }
-              }).addTo(map);
-              
-              if (!window.loadedLayers) window.loadedLayers = [];
-              window.loadedLayers.push(layer);
-              
-              map.fitBounds(layer.getBounds());
-            } else if (extension === 'kml') {
-              console.log('KML file detected - conversion needed');
-            } else if (extension === 'gml') {
-              console.log('GML file detected - conversion needed');
-            }
-          } catch (error) {
-            console.error('Error processing file:', error);
-          }
-        };
-
-        reader.readAsText(file);
-      }
-    }
-
-    // Funciones de análisis
-    async function analizarUrbanismoDesdeRef() {
-      const ref = document.getElementById('urbanismoRefInput').value.trim();
-      if (!ref) {
-        alert('⚠️ Por favor, introduce una referencia catastral');
-        return;
-      }
-      
-      const resultDiv = document.getElementById('urbanismoResult');
-      resultDiv.innerHTML = '⏳ Analizando urbanismo...';
-      
-      try {
-        const res = await fetch('/api/v1/analizar-urbanismo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referencia: ref })
-        });
-        
-        const data = await res.json();
-        if (data.status === 'success') {
-          const u = data.data.analisis_urbanistico;
-          resultDiv.innerHTML = `
-            <div style="background: #e8f5e9; padding: 8px; border-radius: 4px; color: #333; font-size:11px;">
-              <strong>✅ Análisis completado</strong><br>
-              <strong>Suelo:</strong> ${u.suelo}<br>
-              <strong>Edificabilidad:</strong> ${u.edificabilidad}<br>
-              <strong>Superficie:</strong> ${u.superficie_parcela}<br>
-              <strong>Ocupación:</strong> ${u.ocupacion_estimada}
-            </div>
-          `;
-        } else {
-          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.message}</div>`;
-        }
-      } catch (e) {
-        resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error de conexión: ${e.message}</div>`;
-      }
-    }
-    
-    async function analizarUrbanismoDesdeArchivo() {
-      const fileInput = document.getElementById('fileUrbanismo');
-      const resultDiv = document.getElementById('urbanismoResult');
-      
-      if (fileInput.files.length === 0) {
-        alert('⚠️ Por favor, selecciona un archivo vectorial');
-        return;
-      }
-      
-      resultDiv.innerHTML = '⏳ Procesando archivo...';
-      
-      try {
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const res = await fetch('/api/v1/analizar-urbanismo-archivo', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await res.json();
-        if (data.status === 'success') {
-          resultDiv.innerHTML = `
-            <div style="background: #e8f5e9; padding: 8px; border-radius: 4px; color: #333; font-size:11px;">
-              <strong>✅ Análisis completado desde archivo</strong><br>
-              <strong>Archivo:</strong> ${file.name}<br>
-              <strong>Geometrías:</strong> ${data.data.geometrias || 1}
-            </div>
-          `;
-        } else {
-          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.message}</div>`;
-        }
-      } catch (e) {
-        resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error procesando archivo: ${e.message}</div>`;
-      }
-    }
-    
-    async function analizarAfeccionesDesdeRef() {
-      const ref = document.getElementById('afeccionesRefInput').value.trim();
-      if (!ref) {
-        alert('⚠️ Por favor, introduce una referencia catastral');
-        return;
-      }
-      
-      const resultDiv = document.getElementById('afeccionesResult');
-      resultDiv.innerHTML = '⏳ Analizando afecciones...';
-      
-      try {
-        const res = await fetch('/api/v1/analizar-afecciones', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referencia: ref })
-        });
-        
-        const data = await res.json();
-        if (data.status === 'success') {
-          let html = '<div style="background: #ffebee; padding: 8px; border-radius: 4px; color: #333; font-size:11px;"><strong>✅ Análisis completado</strong><br>';
-          data.data.afecciones.forEach(a => {
-            html += `<div style="margin-top: 4px; padding: 3px; background: rgba(255,255,255,0.7); border-radius: 3px; font-size:10px;">
-              <strong>⚠️ ${a.tipo}:</strong> ${a.afectacion} (${a.porcentaje?.toFixed(2)}%)
-            </div>`;
-          });
-          html += '</div>';
-          resultDiv.innerHTML = html;
-        } else {
-          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.message}</div>`;
-        }
-      } catch (e) {
-        resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error de conexión: ${e.message}</div>`;
-      }
-    }
-    
-    async function analizarAfeccionesDesdeArchivo() {
-      const fileInput = document.getElementById('fileAfecciones');
-      const resultDiv = document.getElementById('afeccionesResult');
-      
-      if (fileInput.files.length === 0) {
-        alert('⚠️ Por favor, selecciona archivos vectoriales');
-        return;
-      }
-      
-      resultDiv.innerHTML = '⏳ Procesando archivos...';
-      
-      try {
-        const formData = new FormData();
-        for (let file of fileInput.files) {
-          formData.append('files', file);
-        }
-        
-        const res = await fetch('/api/v1/analizar-afecciones-archivo', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await res.json();
-        if (data.status === 'success') {
-          let html = '<div style="background: #ffebee; padding: 8px; border-radius: 4px; color: #333; font-size:11px;"><strong>✅ Análisis completado desde archivos</strong><br>';
-          data.data.afecciones.forEach(a => {
-            html += `<div style="margin-top: 4px; padding: 3px; background: rgba(255,255,255,0.7); border-radius: 3px; font-size:10px;">
-              <strong>⚠️ ${a.tipo}:</strong> ${a.descripcion}
-            </div>`;
-          });
-          html += '</div>';
-          resultDiv.innerHTML = html;
-        } else {
-          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.message}</div>`;
-        }
-      } catch (e) {
-        resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error procesando archivos: ${e.message}</div>`;
-      }
-    }
-
-    // Generar PDF
-    async function generarPDF() {
-      const ref = document.getElementById('refInput').value.trim();
-      if (!ref) {
-        alert('Por favor, introduce una referencia catastral primero');
-        return;
-      }
-
-      const resultEl = document.getElementById('pdfResult');
-      resultEl.innerHTML = '⏳ Generando PDF...';
-
-      try {
-        const res = await fetch('/api/v1/generar-pdf-completo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            referencia: ref,
-            incluir_referencia: true,
-            incluir_urbanismo: false,
-            incluir_afecciones: false,
-            formato: 'pdf'
-          })
-        });
-
-        const data = await res.json();
-        if (data.status === 'success') {
-          resultEl.innerHTML = `✅ PDF generado<br><small>${data.message || 'PDF creado correctamente'}</small>`;
-          if (data.url) {
-            window.open(data.url, '_blank');
-          }
-        } else {
-          resultEl.innerHTML = `❌ Error: ${data.error || 'Error desconocido'}`;
-        }
-      } catch (e) {
-        resultEl.innerHTML = `❌ Error: ${e.message}`;
-      }
-    }
-
-    // ===== FUNCIONES DE GESTIÓN DE CAPAS =====
-    
-    // Cargar lista de capas disponibles desde /app/capas
-    async function cargarCapasDisponibles() {
-      const container = document.getElementById('capasContainer');
-      container.innerHTML = '<div style="font-size:12px; color:#999;">⏳ Cargando capas...</div>';
-      
-      try {
-        const response = await fetch('/api/v1/capas/fgb');
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const capas = data.capas || [];
-        state.capasDisponibles = capas;
-        
-        if (capas.length === 0) {
-          container.innerHTML = '<div style="font-size:12px; color:#999;">No hay capas disponibles en /app/capas</div>';
-          return;
-        }
-        
-        container.innerHTML = '';
-        capas.forEach((capa, index) => {
-          const div = document.createElement('div');
-          div.style.cssText = 'margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px; border: 1px solid #e9ecef;';
-          
-          const id = `chk_capa_${index}`;
-          div.innerHTML = `
-            <input type="checkbox" id="${id}" data-nombre="${capa.nombre}" data-url="${capa.url}" 
-                   style="margin-right: 8px;" onchange="actualizarBotonCargarCapas()">
-            <label for="${id}" style="font-size:12px; cursor: pointer; margin: 0;">
-              <strong>${capa.nombre}</strong><br>
-              <small style="color: #6c757d;">${capa.archivo || capa.url}</small>
-            </label>
-          `;
-          container.appendChild(div);
-        });
-        
-        console.log(`✅ ${capas.length} capas disponibles cargadas`);
-        
-      } catch (error) {
-        console.error('Error cargando capas:', error);
-        container.innerHTML = `<div style="font-size:12px; color:#dc3545;">❌ Error: ${error.message}</div>`;
-      }
-    }
-    
-    // Actualizar estado del botón de cargar capas
-    function actualizarBotonCargarCapas() {
-      const checkboxes = document.querySelectorAll('#capasContainer input[type="checkbox"]:checked');
-      const boton = document.querySelector('button[onclick="cargarCapasSeleccionadas()"]');
-      
-      if (checkboxes.length > 0) {
-        boton.textContent = `📥 Cargar ${checkboxes.length} Capa(s)`;
-        boton.style.background = 'rgba(40, 167, 69, 0.8)';
-      } else {
-        boton.textContent = '📥 Cargar Capas Seleccionadas';
-        boton.style.background = '';
-      }
-    }
-    
-    // Cargar capas seleccionadas al mapa
-    async function cargarCapasSeleccionadas() {
-      const checkboxes = document.querySelectorAll('#capasContainer input[type="checkbox"]:checked');
-      
-      if (checkboxes.length === 0) {
-        alert('Por favor, selecciona al menos una capa');
-        return;
-      }
-      
-      const capasCargadasDiv = document.getElementById('capasCargadas');
-      capasCargadasDiv.innerHTML = '<div style="font-size:12px; color:#999;">⏳ Cargando capas...</div>';
-      
-      let cargadas = 0;
-      let errores = 0;
-      
-      for (const checkbox of checkboxes) {
-        const nombre = checkbox.dataset.nombre;
-        const url = checkbox.dataset.url;
-        
-        try {
-          console.log(`🔄 Cargando capa: ${nombre} desde ${url}`);
-          
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-          }
-          
-          const geojson = await response.json();
-          
-          // Crear capa con estilo aleatorio
-          const colores = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#48dbfb'];
-          const color = colores[state.capasCargadas.size % colores.length];
-          
-          const layer = L.geoJSON(geojson, {
-            style: {
-              color: color,
-              weight: 2,
-              fillOpacity: 0.3,
-              fillColor: color
-            },
-            onEachFeature: function(feature, layer) {
-              if (feature.properties) {
-                const popupContent = Object.entries(feature.properties)
-                  .slice(0, 5) // Limitar a 5 propiedades
-                  .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-                  .join('<br>');
-                layer.bindPopup(`<strong>${nombre}</strong><br><br>${popupContent}`);
-              }
-            }
-          });
-          
-          // Añadir al mapa y guardar referencia
-          layer.addTo(map);
-          state.capasCargadas.set(nombre, {
-            layer: layer,
-            color: color,
-            url: url
-          });
-          
-          cargadas++;
-          
-        } catch (error) {
-          console.error(`Error cargando capa ${nombre}:`, error);
-          errores++;
-        }
-      }
-      
-      // Actualizar UI
-      actualizarListaCapasCargadas();
-      
-      // Ajustar vista a las capas cargadas
-      if (state.capasCargadas.size > 0) {
-        const group = new L.featureGroup(Array.from(state.capasCargadas.values()).map(item => item.layer));
-        map.fitBounds(group.getBounds().pad(0.1));
-      }
-      
-      // Mostrar resultado
-      const mensaje = cargadas > 0 
-        ? `✅ ${cargadas} capa(s) cargada(s)${errores > 0 ? ` (${errores} con errores)` : ''}`
-        : `❌ No se pudieron cargar las capas`;
-      
-      alert(mensaje);
-      
-      // Limpiar selección
-      checkboxes.forEach(cb => cb.checked = false);
-      actualizarBotonCargarCapas();
-    }
-    
-    // Actualizar lista de capas cargadas
-    function actualizarListaCapasCargadas() {
-      const container = document.getElementById('capasCargadas');
-      
-      if (state.capasCargadas.size === 0) {
-        container.innerHTML = '<div style="font-size:12px; color:#999;">No hay capas cargadas</div>';
-        return;
-      }
-      
-      container.innerHTML = '';
-      state.capasCargadas.forEach((info, nombre) => {
-        const div = document.createElement('div');
-        div.style.cssText = 'margin-bottom: 6px; padding: 6px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ' + info.color + ';';
-        
-        div.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size:11px; font-weight:500;">${nombre}</span>
-            <button onclick="toggleCapa('${nombre}')" style="padding: 2px 6px; font-size:10px; background: ${info.color}; color: white; border: none; border-radius: 3px; cursor: pointer;">
-              👁️
-            </button>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
-    
-    // Alternar visibilidad de capa
-    function toggleCapa(nombre) {
-      const info = state.capasCargadas.get(nombre);
-      if (!info) return;
-      
-      if (map.hasLayer(info.layer)) {
-        map.removeLayer(info.layer);
-      } else {
-        info.layer.addTo(map);
-      }
-    }
-    
-    // Limpiar todas las capas cargadas
-    function limpiarCapasCargadas() {
-      if (state.capasCargadas.size === 0) {
-        alert('No hay capas cargadas para limpiar');
-        return;
-      }
-      
-      if (confirm(`¿Estás seguro de eliminar las ${state.capasCargadas.size} capa(s) cargada(s)?`)) {
-        state.capasCargadas.forEach((info, nombre) => {
-          map.removeLayer(info.layer);
-        });
-        
-        state.capasCargadas.clear();
-        actualizarListaCapasCargadas();
-        
-        console.log('🗑️ Capas cargadas eliminadas');
-      }
-    }
-  </script>
+    <div class="footer">
+        <p>© 2026 GIS Platform - Tecnología Alcalá</p>
+    </div>
 </body>
 </html>
