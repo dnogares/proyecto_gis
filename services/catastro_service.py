@@ -22,6 +22,7 @@ import json
 import logging
 import requests
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
@@ -613,6 +614,67 @@ class CatastroCompleteService:
         }
     
     # ========================================================================
+    # MÉTODOS PÚBLICOS DE APOYO
+    # ========================================================================
+
+    def generar_zip_descarga(self, referencia: str) -> Optional[Path]:
+        """
+        Genera un ZIP con todos los archivos de una referencia catastral.
+        """
+        ref_limpia = self._limpiar_referencia(referencia)
+        ref_dir = self.output_dir / ref_limpia
+
+        if not ref_dir.exists():
+            logger.warning(f"No se puede generar ZIP: El directorio {ref_dir} no existe")
+            return None
+
+        zip_path = ref_dir / f"{ref_limpia}.zip"
+
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(ref_dir):
+                    for file in files:
+                        # No incluir el propio archivo ZIP
+                        if file != f"{ref_limpia}.zip":
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, ref_dir)
+                            zipf.write(file_path, arcname)
+
+            logger.info(f"✅ ZIP generado: {zip_path}")
+            return zip_path
+        except Exception as e:
+            logger.error(f"❌ Error generando ZIP para {ref_limpia}: {e}")
+            return None
+
+    def generar_zip_lote(self, lote_id: str) -> Optional[Path]:
+        """
+        Genera un ZIP con todos los archivos de un lote completo.
+        """
+        lote_dir = self.output_dir / lote_id
+
+        if not lote_dir.exists():
+            logger.warning(f"No se puede generar ZIP de lote: El directorio {lote_dir} no existe")
+            return None
+
+        # El zip del lote se guarda en el directorio raíz de descargas
+        zip_path = self.output_dir / f"{lote_id}.zip"
+
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(lote_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        # Incluimos la carpeta del lote en el ZIP
+                        arcname = os.path.relpath(file_path, self.output_dir)
+                        zipf.write(file_path, arcname)
+
+            logger.info(f"✅ ZIP de lote generado: {zip_path}")
+            return zip_path
+        except Exception as e:
+            logger.error(f"❌ Error generando ZIP de lote {lote_id}: {e}")
+            return None
+
+    # ========================================================================
     # MÉTODOS PRIVADOS
     # ========================================================================
     
@@ -686,7 +748,9 @@ class CatastroCompleteService:
                             }
             except Exception as e:
                 logger.warning(f"Error parsing coordenadas response: {e}")
-
+            return {}
+        except Exception as e:
+            logger.error(f"Error in _obtener_coordenadas: {e}")
             return {}
     
     def _obtener_datos_catastro(self, ref: str) -> Dict:
@@ -712,6 +776,9 @@ class CatastroCompleteService:
             except Exception as e:
                 logger.warning(f"Error parsing datos_catastro response: {e}")
                 return {}
+        except Exception as e:
+            logger.error(f"Error in _obtener_datos_catastro: {e}")
+            return {}
     
     def _descargar_gml(self, ref: str) -> Optional[Path]:
         """Descarga archivo GML de la parcela"""
@@ -741,6 +808,9 @@ class CatastroCompleteService:
             except Exception as e:
                 logger.error(f"Error saving GML to disk: {e}")
                 return None
+        except Exception as e:
+            logger.error(f"Error in _descargar_gml: {e}")
+            return None
     
     def _extraer_vertices(self, geom) -> List[Dict]:
         """Extrae vértices de una geometría"""
@@ -855,9 +925,9 @@ class CatastroCompleteService:
         lote_dir = self.output_dir / lote_id
         archivos = {}
         
-        # 1. Excel resumen
+        # 1. CSV resumen
         try:
-            xlsx_path = lote_dir / f"{lote_id}_resumen.xlsx"
+            csv_path = lote_dir / f"{lote_id}_resumen.csv"
             
             # Preparar datos
             datos_resumen = []
@@ -877,23 +947,19 @@ class CatastroCompleteService:
                     })
             
             df = pd.DataFrame(datos_resumen)
+            df.to_csv(csv_path, index=False)
+            archivos['csv_resumen'] = str(csv_path)
             
-            with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='Resumen', index=False)
-                
-                # Hoja de validación
-                df_validacion = pd.DataFrame({
-                    'Total Referencias': [validacion['total']],
-                    'Válidas': [validacion['num_validas']],
-                    'Inválidas': [validacion['num_invalidas']],
-                    'Duplicadas': [validacion['num_duplicadas']]
-                })
-                df_validacion.to_excel(writer, sheet_name='Validación', index=False)
-            
-            archivos['excel_resumen'] = str(xlsx_path)
+            # XLSX resumen (requiere openpyxl)
+            try:
+                xlsx_path = lote_dir / f"{lote_id}_resumen.xlsx"
+                df.to_excel(xlsx_path, index=False, sheet_name='Resumen Lote')
+                archivos['xlsx_resumen'] = str(xlsx_path)
+            except Exception as e_xlsx:
+                logger.warning(f"No se pudo generar Excel (posiblemente falta openpyxl): {e_xlsx}")
             
         except Exception as e:
-            logger.error(f"Error generando Excel: {e}")
+            logger.error(f"Error generando resumen: {e}")
         
         # 2. JSON completo
         try:

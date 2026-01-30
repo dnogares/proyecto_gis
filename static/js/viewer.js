@@ -60,6 +60,11 @@ class GISViewer {
      * Inicializar mapa base Leaflet
      */
     initMap() {
+        if (!document.getElementById(this.mapId)) {
+            console.warn(`⚠️ Contenedor de mapa #${this.mapId} no encontrado`);
+            return;
+        }
+
         // Crear mapa centrado en España
         this.map = L.map(this.mapId, {
             center: [40.4167, -3.7033],
@@ -80,6 +85,8 @@ class GISViewer {
      * Inicializar controles de dibujo
      */
     initDrawControls() {
+        if (!this.map) return;
+
         // Configurar herramientas de dibujo
         this.drawnItems = new L.FeatureGroup();
         this.map.addLayer(this.drawnItems);
@@ -96,13 +103,10 @@ class GISViewer {
         });
         this.map.addControl(drawControl);
 
-        // SOLUCIÓN AL ERROR 'ON' de null: El evento se asigna DESPUÉS de crear el mapa
         this.map.on(L.Draw.Event.CREATED, (e) => {
-            this.drawnItems.clearLayers(); // Limpiar dibujos previos
+            this.drawnItems.clearLayers();
             const layer = e.layer;
             this.drawnItems.addLayer(layer);
-            
-            // Geometría lista para analizar
             const geometria = layer.toGeoJSON().geometry;
             console.log("📐 Geometría lista para analizar:", geometria);
         });
@@ -117,16 +121,8 @@ class GISViewer {
         try {
             const response = await fetch('/api/v1/capas/fgb');
             const data = await response.json();
-
             this.fgbCapas = data.capas || [];
-
             console.log(`📊 ${this.fgbCapas.length} capas FlatGeobuf disponibles`);
-
-            if (this.fgbCapas.length === 0) {
-                console.warn('⚠️  No hay capas FGB disponibles');
-                this.showNotification('⚠️ No hay capas FlatGeobuf disponibles', 'warning');
-            }
-
         } catch (error) {
             console.error('❌ Error cargando capas FGB:', error);
             this.fgbCapas = [];
@@ -137,210 +133,174 @@ class GISViewer {
      * Inicializar controles de capas
      */
     initLayerControls() {
-        const layerList = document.getElementById('layer-list') || document.getElementById('capasList');
+        // Soporte para múltiples IDs de contenedores usados en diferentes plantillas
+        const containerIds = ['layer-list', 'capasList', 'capasContainer'];
+        let layerList = null;
+
+        for (const id of containerIds) {
+            layerList = document.getElementById(id);
+            if (layerList) break;
+        }
 
         if (!layerList) {
-            console.warn('⚠️ Elemento de lista de capas no encontrado');
+            console.debug('ℹ️ No se encontró contenedor para la lista de capas');
             return;
         }
 
-        // Limpiar lista existente
         layerList.innerHTML = '';
+        if (this.fgbCapas.length === 0) {
+            layerList.innerHTML = '<p style="color: #666; font-size: 12px; padding: 10px;">No hay capas disponibles</p>';
+            return;
+        }
 
-        // Añadir botones para capas FGB disponibles
         this.fgbCapas.forEach(capa => {
             const btn = document.createElement('button');
             btn.className = 'btn-capa';
             btn.innerHTML = `<span>📁</span> ${capa.nombre}`;
-            btn.style.cssText = `
-                display: block;
-                width: 100%;
-                margin: 5px 0;
-                padding: 8px 12px;
-                background: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 12px;
-                text-align: left;
-            `;
-            
+            btn.style.cssText = `display: block; width: 100%; margin: 5px 0; padding: 8px 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer; font-size: 12px; text-align: left;`;
             btn.onclick = () => this.cargarCapaIndividual(capa.nombre, capa.url);
-            btn.onmouseover = () => btn.style.background = '#e9ecef';
-            btn.onmouseout = () => btn.style.background = '#f8f9fa';
-            
             layerList.appendChild(btn);
         });
-
-        console.log('✅ Controles de capas inicializados');
     }
 
     /**
-     * Cargar capa individual con FlatGeobuf (Código Maestro)
+     * Alternar visibilidad de una capa
      */
-    async cargarCapaIndividual(nombre, url) {
-        console.log(`� Descargando binario FGB: ${nombre}`);
+    async toggleLayer(layerId, visible) {
+        if (visible) {
+            await this.loadLayer(layerId);
+        } else {
+            this.removeLayer(layerId);
+        }
+    }
+
+    /**
+     * Cargar una capa por su ID o nombre
+     */
+    async loadLayer(layerId) {
+        if (this.layers[layerId] && this.map.hasLayer(this.layers[layerId])) return;
+
+        const capa = this.fgbCapas.find(c => c.nombre.toLowerCase().includes(layerId.toLowerCase()));
+        const url = capa ? capa.url : `/capas/fgb/${layerId}.fgb`;
+        const nombre = capa ? capa.nombre : layerId;
+
+        return await this.cargarCapaIndividual(nombre, url, layerId);
+    }
+
+    /**
+     * Remover una capa del mapa
+     */
+    removeLayer(layerId) {
+        if (this.layers[layerId]) {
+            this.map.removeLayer(this.layers[layerId]);
+            delete this.layers[layerId];
+            this.showNotification(`🗑️ Capa ${layerId} removida`, 'info');
+        }
+    }
+
+    /**
+     * Cargar capa individual con FlatGeobuf
+     */
+    async cargarCapaIndividual(nombre, url, layerId = null) {
+        if (!this.map) return;
+        if (typeof flatgeobuf === 'undefined') {
+            this.showNotification('❌ Error: Librería FlatGeobuf no cargada', 'error');
+            return;
+        }
+        const id = layerId || nombre;
+        console.log(`🔄 Descargando FGB: ${nombre} desde ${url}`);
         
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error("Error en la descarga");
 
-            // IMPORTANTE: flatgeobuf.deserialize espera el body de la respuesta
+            const loading = document.getElementById('loading');
+            if (loading) loading.classList.add('active');
+
             const iter = flatgeobuf.deserialize(response.body);
-            
             const fgLayer = L.geoJSON(null, {
-                style: { 
-                    color: this.getColorForLayer(nombre), 
-                    weight: 2, 
-                    fillOpacity: 0.3 
-                },
+                style: { color: this.getColorForLayer(nombre), weight: 2, fillOpacity: 0.3 },
                 onEachFeature: (feature, layer) => {
-                    layer.bindPopup(`<b>Capa:</b> ${nombre}`);
+                    let popup = `<b>Capa:</b> ${nombre}`;
+                    if (feature.properties) {
+                        popup += '<br><hr>';
+                        Object.entries(feature.properties).slice(0, 10).forEach(([k, v]) => {
+                            popup += `<br><b>${k}:</b> ${v}`;
+                        });
+                    }
+                    layer.bindPopup(popup);
                 }
             }).addTo(this.map);
 
-            // Leemos el stream binario
-            let featureCount = 0;
+            let count = 0;
             for await (let feature of iter) {
                 fgLayer.addData(feature);
-                featureCount++;
+                count++;
             }
             
-            console.log(`✅ Capa ${nombre} renderizada con éxito (${featureCount} elementos)`);
-            
-            // Zoom a la capa
-            if (featureCount > 0) {
-                this.map.fitBounds(fgLayer.getBounds());
-            }
-
-            this.showNotification(`✅ ${nombre}: ${featureCount} elementos cargados`, 'success');
-
+            this.layers[id] = fgLayer;
+            if (count > 0) this.map.fitBounds(fgLayer.getBounds());
+            if (loading) loading.classList.remove('active');
+            this.showNotification(`✅ ${nombre}: ${count} elementos`, 'success');
+            return fgLayer;
         } catch (error) {
-            console.error("❌ Fallo crítico cargando FGB:", error);
+            console.error("❌ Error FGB:", error);
+            if (loading) loading.classList.remove('active');
             this.showNotification(`❌ Error cargando ${nombre}`, 'error');
         }
     }
 
-    /**
-     * Obtener color para capa
-     */
     getColorForLayer(nombre) {
-        const colors = {
-            'rednatura': '#2E7D32',
-            'vias': '#F57C00',
-            'espacios': '#1976D2',
-            'agua': '#0288D1',
-            'inund': '#F44336',
-            'monte': '#228B22',
-            'cultural': '#9B59B6',
-            'sismico': '#E74C3C',
-            'desert': '#F39C12',
-            'volcan': '#8B0000'
-        };
-
-        for (const [key, color] of Object.entries(colors)) {
-            if (nombre.toLowerCase().includes(key)) return color;
-        }
-
-        return '#666666'; // Gris por defecto
+        const colors = { 'rednatura': '#2E7D32', 'vias': '#F57C00', 'espacios': '#1976D2', 'agua': '#0288D1', 'inund': '#F44336' };
+        for (const [key, color] of Object.entries(colors)) { if (nombre.toLowerCase().includes(key)) return color; }
+        return '#666666';
     }
 
-    /**
-     * Cargar referencia catastral
-     */
     async cargarReferencia(ref) {
-        if (!ref) {
-            this.showNotification('Por favor, introduce una referencia catastral', 'warning');
-            return;
-        }
-        
+        if (!ref || !this.map) return;
         try {
             const response = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
-            if (!response.ok) {
-                throw new Error('Referencia no encontrada');
-            }
-            
+            if (!response.ok) throw new Error(`Referencia ${ref} no encontrada`);
             const geojson = await response.json();
-            
-            L.geoJSON(geojson, {
-                style: {
-                    color: '#e74c3c',
-                    weight: 3,
-                    fillOpacity: 0.3
-                }
+            const layer = L.geoJSON(geojson, {
+                style: { color: '#e74c3c', weight: 3, fillOpacity: 0.3 },
+                onEachFeature: (f, l) => l.bindPopup(`<b>Ref:</b> ${ref}`)
             }).addTo(this.map);
-            
-            // Centrar mapa en la referencia
-            const bounds = L.geoJSON(geojson).getBounds();
-            this.map.fitBounds(bounds);
-            
+            this.layers[`ref_${ref}`] = layer;
+            this.map.fitBounds(layer.getBounds());
             this.showNotification(`✅ Referencia ${ref} cargada`, 'success');
-            
         } catch (error) {
-            console.error('Error cargando referencia:', error);
-            this.showNotification('Error cargando referencia', 'error');
+            this.showNotification(`❌ Error: ${error.message}`, 'error');
         }
     }
 
-    /**
-     * Mostrar notificación
-     */
+    limpiarMapa() {
+        if (!this.map) return;
+        Object.keys(this.layers).forEach(id => this.map.removeLayer(this.layers[id]));
+        this.layers = {};
+        if (this.drawnItems) this.drawnItems.clearLayers();
+        this.showNotification('🗑️ Mapa limpiado', 'info');
+    }
+
     showNotification(message, type = 'info') {
-        console.log(`[${type.toUpperCase()}] ${message}`);
-        
-        // Crear elemento de notificación si no existe
-        let notification = document.getElementById('notification');
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.id = 'notification';
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 12px 20px;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: 500;
-                z-index: 10000;
-                display: none;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            `;
-            document.body.appendChild(notification);
+        let n = document.getElementById('notification');
+        if (!n) {
+            n = document.createElement('div');
+            n.id = 'notification';
+            n.style.cssText = `position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 4px; z-index: 10000; color: white; display: none;`;
+            document.body.appendChild(n);
         }
-
-        notification.textContent = message;
-        notification.style.display = 'block';
-
-        // Colores según tipo
-        const colors = {
-            success: { bg: '#4CAF50', color: 'white' },
-            error: { bg: '#F44336', color: 'white' },
-            warning: { bg: '#FF9800', color: 'white' },
-            info: { bg: '#2196F3', color: 'white' }
-        };
-
-        const style = colors[type] || colors.info;
-        notification.style.background = style.bg;
-        notification.style.color = style.color;
-
-        // Auto-ocultar después de 3 segundos
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
+        n.textContent = message;
+        n.style.background = { success: '#4CAF50', error: '#F44336', warning: '#FF9800', info: '#2196F3' }[type] || '#2196F3';
+        n.style.display = 'block';
+        setTimeout(() => n.style.display = 'none', 3000);
     }
 }
 
-// Inicialización segura
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Iniciando GIS Viewer v3.0...');
-    
-    try {
-        // Crear instancia global del visor
+    // Evitar inicialización doble si ya existe gisViewer
+    if (document.getElementById('map') && !window.gisViewer) {
         window.gisViewer = new GISViewer('map');
         await window.gisViewer.init();
-        
-        console.log('✅ GIS Viewer v3.0 listo');
-    } catch (error) {
-        console.error('❌ Error inicializando GIS Viewer:', error);
     }
 });

@@ -33,6 +33,8 @@ requests==2.31.0
 requests-cache==1.1.1  # Cache HTTP para Catastro
 Pillow==10.2.0  # Procesamiento de imágenes (composiciones, contornos)
 reportlab==4.0.8  # Generación de PDFs
+openpyxl==3.1.2  # Soporte para archivos Excel (.xlsx)
+matplotlib==3.8.2  # Generación de mapas estáticos
 
 # Logging y monitoreo
 python-dotenv==1.0.0

@@ -111,6 +111,7 @@ async def sync_check():
         "routes": {
             "/": "Dashboard de Módulos (index.html)",
             "/visor.html": "Visor Catastral 3 Paneles",
+            "/visor_catastral.html": "Visor Catastral Simple",
             "/gis.html": "Visor GIS FlatGeobuf",
             "/catastro.html": "Módulo de Catastro",
             "/analisis.html": "Análisis de Afecciones"
@@ -217,6 +218,14 @@ async def obtener_geometria_catastro(referencia: str, formatos: str = "geojson,k
     lista_formatos = [f.strip() for f in formatos.split(',')]
     return catastro_service.obtener_geometria(referencia, lista_formatos)
 
+@app.get("/api/v1/referencia/{referencia}/geojson")
+async def obtener_referencia_geojson(referencia: str):
+    """Alias para compatibilidad con visores existentes"""
+    if not catastro_service:
+        raise HTTPException(503, "Servicio no disponible")
+    resultado = catastro_service.obtener_geometria(referencia, ["geojson"])
+    return resultado.get("geojson")
+
 @app.post("/api/v1/catastro/procesar-lote")
 async def procesar_lote_catastro(request: Request):
     if not catastro_service:
@@ -234,6 +243,43 @@ async def descargar_lote_catastro(lote_id: str):
         raise HTTPException(404, "Lote no encontrado")
     return FileResponse(zip_path, media_type="application/zip", filename=f"{lote_id}.zip")
 
+@app.post("/api/v1/catastro/descargar")
+async def catastro_descargar_individual(request: Request):
+    if not catastro_service:
+        raise HTTPException(503, "Servicio no disponible")
+    data = await request.json()
+    referencia = data.get("referencia")
+    # El servicio de catastro genera archivos en descargas_catastro/{referencia}/
+    resultado = catastro_service.obtener_geometria(referencia, ["geojson", "gml", "kml", "png", "txt"])
+
+    # Generar ZIP
+    zip_path = catastro_service.generar_zip_descarga(referencia)
+
+    return {
+        "exitosa": True if zip_path else False,
+        "referencia": referencia,
+        "zip_path": f"/descargas/{referencia}/{referencia}.zip" if zip_path else None
+    }
+
+@app.post("/api/v1/catastro/descargar-lote")
+async def catastro_descargar_lote(request: Request):
+    if not catastro_service:
+        raise HTTPException(503, "Servicio no disponible")
+    data = await request.json()
+    resultado = catastro_service.procesar_lote(
+        referencias=data.get("referencias", []),
+        incluir_afecciones=data.get("descargar_afecciones", True)
+    )
+
+    # Generar ZIP del lote
+    if resultado.get("lote_id"):
+        zip_path = catastro_service.generar_zip_lote(resultado["lote_id"])
+        if zip_path:
+            resultado["zip_path"] = f"/descargas/{resultado['lote_id']}.zip"
+            resultado["exitosa"] = True
+
+    return resultado
+
 # =======================================================================
 # SERVIR FRONTEND Y ESTÁTICOS
 # =======================================================================
@@ -241,14 +287,27 @@ async def descargar_lote_catastro(lote_id: str):
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 app.mount("/capas", StaticFiles(directory="/app/capas"), name="capas")
+app.mount("/descargas", StaticFiles(directory="descargas_catastro"), name="descargas")
 
 @app.get("/")
+async def read_root():
+    return FileResponse('templates/index.html')
+
+@app.get("/index.html")
 async def read_index():
     return FileResponse('templates/index.html')
+
+@app.get("/index_limpio.html")
+async def read_index_limpio():
+    return FileResponse('templates/index_limpio.html')
 
 @app.get("/visor.html")
 async def read_visor():
     return FileResponse('templates/visor.html')
+
+@app.get("/visor_catastral.html")
+async def read_visor_catastral():
+    return FileResponse('templates/visor_catastral.html')
 
 @app.get("/gis.html")
 async def read_gis():

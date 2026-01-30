@@ -322,7 +322,9 @@
 <body>
     <!-- Navegación -->
     <nav class="navbar">
-        <a href="/">🌍 Visor GIS</a>
+        <a href="/">🏠 Inicio</a>
+        <a href="/visor.html">🗺️ Visor Catastral</a>
+        <a href="/gis.html">🌍 Visor GIS</a>
         <a href="/catastro.html" class="active">📄 Catastro</a>
         <a href="/analisis.html">🔍 Análisis</a>
     </nav>
@@ -546,8 +548,7 @@
                     }
 
                     if (data.zip_path) {
-                        const zipName = data.zip_path.split('/').pop();
-                        html += `<a href="/descargas/${zipName}" class="download-btn" download>📦 Descargar ZIP Completo</a>`;
+                        html += `<a href="${data.zip_path}" class="download-btn" download>📦 Descargar ZIP Completo</a>`;
                     }
 
                     html += '</div>';
@@ -563,8 +564,7 @@
                     html += `<p><strong>Tamaño ZIP:</strong> ${data.zip_size_mb} MB</p>`;
 
                     if (data.zip_path) {
-                        const zipName = data.zip_path.split('/').pop();
-                        html += `<a href="/descargas/${zipName}" class="download-btn" download>📦 Descargar ZIP de Lote</a>`;
+                        html += `<a href="${data.zip_path}" class="download-btn" download>📦 Descargar ZIP de Lote</a>`;
                     }
 
                     html += '</div>';

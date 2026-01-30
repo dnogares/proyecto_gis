@@ -7,6 +7,7 @@
   <title>Visor Catastral</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body, html {
@@ -263,25 +264,50 @@
     #measurement-result.active {
       display: block;
     }
+
+    .home-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: white;
+      padding: 10px 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      text-decoration: none;
+      color: #1e293b;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .home-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      color: #3b82f6;
+    }
   </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <script src="/static/js/viewer.js"></script>
   <script>
     // Variable global para el mapa
     let map;
     let drawnItems;
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Inicializar el mapa con seguridad
-        map = L.map('map').setView([40.4167, -3.7033], 6);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        // 1. Inicializar el mapa con GISViewer
+        if (!window.gisViewer) {
+            window.gisViewer = new GISViewer('map');
+            await window.gisViewer.init();
+        }
+        map = window.gisViewer.map;
 
         // 2. Configurar herramientas de dibujo
-        drawnItems = new L.FeatureGroup();
+        drawnItems = window.gisViewer.drawnItems;
         map.addLayer(drawnItems);
 
         const drawControl = new L.Control.Draw({
@@ -402,6 +428,10 @@
 </head>
 
 <body>
+  <a href="/" class="home-button">
+    <i class="fas fa-home"></i>
+    <span>Inicio</span>
+  </a>
   <div class="main-container">
     <!-- PANEL IZQUIERDO -->
     <div class="left-panel">
