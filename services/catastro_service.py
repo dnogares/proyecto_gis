@@ -30,6 +30,8 @@ from shapely.geometry import shape, Point, mapping
 from shapely.ops import unary_union
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -63,18 +65,36 @@ class CatastroCompleteService:
             data_manager: DataSourceManager para capas GIS
             cache_enabled: Activar caché
         """
-        self.output_dir = Path(output_dir)
+        # Allow overriding output directory via env var for EasyPanel / container deployments
+        env_output = os.getenv('CATASTRO_OUTPUT_DIR')
+        out = env_output if env_output else output_dir
+        self.output_dir = Path(out)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.data_manager = data_manager
         self.cache_enabled = cache_enabled
+
+        # Robust HTTP session with retries and backoff
         self.session = requests.Session()
-        self.session.headers.update({'User-Agent': 'Mozilla/5.0'})
-        
-        # Cache en memoria
+        self.session.headers.update({'User-Agent': 'Mozilla/5.0 (proyecto_gis)'})
+        retries = Retry(total=3, backoff_factor=0.6, status_forcelist=[429, 500, 502, 503, 504], raise_on_status=False)
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
+
+        # In-memory cache
         self._cache = {}
-        
-        logger.info(f"✅ CatastroCompleteService inicializado")
+
+        logger.info(f"✅ CatastroCompleteService inicializado (output_dir={self.output_dir})")
+
+    def _safe_get(self, url: str, params: Optional[Dict] = None, timeout: int = 10) -> Optional[requests.Response]:
+        """Helper to perform GET with the configured session, retries and logging."""
+        try:
+            resp = self.session.get(url, params=params, timeout=timeout)
+            return resp
+        except requests.RequestException as e:
+            logger.warning(f"HTTP request failed for {url}: {e}")
+            return None
     
     # ========================================================================
     # 1. VALIDACIÓN DE REFERENCIAS CATASTRALES
@@ -604,12 +624,10 @@ class CatastroCompleteService:
         """Verifica si existe en Catastro"""
         try:
             params = {'SRS': 'EPSG:4326', 'RC': ref}
-            response = self.session.get(
-                self.URLS['coordenadas'], 
-                params=params, 
-                timeout=10
-            )
-            
+            response = self._safe_get(self.URLS['coordenadas'], params=params, timeout=10)
+            if response is None:
+                return False
+
             if response.status_code == 200:
                 root = ET.fromstring(response.content)
                 # Buscar errores
@@ -619,21 +637,24 @@ class CatastroCompleteService:
                 # Buscar coordenadas
                 coord = root.find('.//{http://www.catastro.meh.es/}coord')
                 return coord is not None
-            
+
             return False
-        except:
+        except Exception as e:
+            logger.warning(f"_existe_en_catastro error: {e}")
             return False
     
     def _obtener_coordenadas(self, ref: str) -> Dict:
         """Obtiene coordenadas del centroide"""
         try:
             params = {'SRS': 'EPSG:4326', 'RC': ref}
-            response = self.session.get(self.URLS['coordenadas'], params=params, timeout=10)
-            
-            if response.status_code == 200:
+            response = self._safe_get(self.URLS['coordenadas'], params=params, timeout=10)
+            if response is None or response.status_code != 200:
+                return {}
+
+            try:
                 root = ET.fromstring(response.content)
                 ns = {'cat': 'http://www.catastro.meh.es/'}
-                
+
                 coord = root.find('.//cat:coord', ns)
                 if coord is not None:
                     geo = coord.find('cat:geo', ns)
@@ -641,19 +662,19 @@ class CatastroCompleteService:
                         xcen = geo.find('cat:xcen', ns)
                         ycen = geo.find('cat:ycen', ns)
                         srs = geo.find('cat:srs', ns)
-                        
+
                         if xcen is not None and ycen is not None:
                             lon = float(xcen.text)
                             lat = float(ycen.text)
-                            
+
                             # Convertir a UTM si es necesario
                             point = Point(lon, lat)
                             gdf = gpd.GeoDataFrame([{'geometry': point}], crs="EPSG:4326")
                             gdf_utm = gdf.to_crs("EPSG:25830")
-                            
+
                             utm_x = gdf_utm.geometry.x.iloc[0]
                             utm_y = gdf_utm.geometry.y.iloc[0]
-                            
+
                             return {
                                 "lat": lat,
                                 "lon": lon,
@@ -663,21 +684,22 @@ class CatastroCompleteService:
                                 "zona": "N",
                                 "srs": srs.text if srs is not None else "EPSG:4326"
                             }
-            
-            return {}
-        except Exception as e:
-            logger.warning(f"Error obteniendo coordenadas: {e}")
+            except Exception as e:
+                logger.warning(f"Error parsing coordenadas response: {e}")
+
             return {}
     
     def _obtener_datos_catastro(self, ref: str) -> Dict:
         """Obtiene datos desde Catastro"""
         try:
             params = {'SRS': 'EPSG:4326', 'RC': ref}
-            response = self.session.get(self.URLS['datos_rc'], params=params, timeout=10)
-            
-            if response.status_code == 200:
+            response = self._safe_get(self.URLS['datos_rc'], params=params, timeout=10)
+            if response is None or response.status_code != 200:
+                return {}
+
+            try:
                 data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
-                
+
                 # Extraer datos (estructura varía según API)
                 return {
                     "provincia": data.get('provincia', 'Desconocido'),
@@ -687,11 +709,9 @@ class CatastroCompleteService:
                     "uso": data.get('uso', 'No especificado'),
                     "direccion": data.get('direccion', '')
                 }
-            
-            return {}
-        except Exception as e:
-            logger.warning(f"Error obteniendo datos Catastro: {e}")
-            return {}
+            except Exception as e:
+                logger.warning(f"Error parsing datos_catastro response: {e}")
+                return {}
     
     def _descargar_gml(self, ref: str) -> Optional[Path]:
         """Descarga archivo GML de la parcela"""
@@ -705,22 +725,22 @@ class CatastroCompleteService:
                 'srsname': 'EPSG:4326'
             }
             
-            response = self.session.get(self.URLS['wfs_parcela'], params=params, timeout=30)
-            
-            if response.status_code == 200:
+            response = self._safe_get(self.URLS['wfs_parcela'], params=params, timeout=30)
+            if response is None or response.status_code != 200:
+                return None
+
+            try:
                 ref_dir = self.output_dir / ref
                 ref_dir.mkdir(exist_ok=True)
-                
+
                 gml_path = ref_dir / f"{ref}.gml"
                 with open(gml_path, 'wb') as f:
                     f.write(response.content)
-                
+
                 return gml_path
-            
-            return None
-        except Exception as e:
-            logger.error(f"Error descargando GML: {e}")
-            return None
+            except Exception as e:
+                logger.error(f"Error saving GML to disk: {e}")
+                return None
     
     def _extraer_vertices(self, geom) -> List[Dict]:
         """Extrae vértices de una geometría"""
