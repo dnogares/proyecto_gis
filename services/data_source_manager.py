@@ -148,9 +148,59 @@ class DataSourceManager:
             except Exception as e:
                 logger.warning(f"  ⚠️  Error con PostGIS: {e}")
         
-        # 4. Fallback a GPKG
+        # 4. Shapefile (Nuevo fallback)
+        try:
+            gdf = self._obtener_desde_shp(nombre_capa, bbox)
+            if gdf is not None and not gdf.empty:
+                return gdf
+        except Exception as e:
+            logger.warning(f"  ⚠️  Error con Shapefile: {e}")
+
+        # 5. Fallback a GPKG
         return self._obtener_desde_gpkg(nombre_capa)
     
+    def _obtener_desde_shp(
+        self,
+        nombre_capa: str,
+        bbox: Optional[Tuple[float, float, float, float]] = None
+    ) -> Optional[gpd.GeoDataFrame]:
+        """
+        Obtiene capa desde archivos Shapefile (.shp).
+        """
+        # Variaciones posibles
+        posibles_nombres = [
+            f"{nombre_capa}.shp",
+            f"{nombre_capa.lower()}.shp",
+            f"{nombre_capa.upper()}.shp"
+        ]
+        
+        for nombre_archivo in posibles_nombres:
+            shp_path = self.shp_dir / nombre_archivo
+            
+            if shp_path.exists():
+                try:
+                    # GeoPandas lee SHP de forma nativa
+                    if bbox:
+                        gdf = gpd.read_file(shp_path, bbox=bbox)
+                    else:
+                        gdf = gpd.read_file(shp_path)
+                    
+                    # Asegurar EPSG:4326
+                    if gdf.crs and gdf.crs.to_epsg() != 4326:
+                        gdf = gdf.to_crs("EPSG:4326")
+                        
+                    logger.info(
+                        f"  ✅ {nombre_capa} desde Shapefile "
+                        f"({len(gdf):,} features)"
+                    )
+                    return gdf
+                    
+                except Exception as e:
+                    logger.warning(f"  ⚠️  Error leyendo SHP {shp_path.name}: {e}")
+                    continue
+                    
+        return None
+
     def _obtener_desde_fgb(
         self,
         nombre_capa: str,
@@ -180,13 +230,20 @@ class DataSourceManager:
                     # FlatGeobuf soporta bbox nativo (súper eficiente)
                     if bbox:
                         # GeoPandas 0.12+ soporta bbox directamente
-                        gdf = gpd.read_file(
-                            fgb_path,
-                            bbox=bbox,
-                            engine="pyogrio"  # Más rápido que fiona
-                        )
+                        # Usamos pyogrio si está disponible por velocidad
+                        try:
+                            gdf = gpd.read_file(
+                                fgb_path,
+                                bbox=bbox,
+                                engine="pyogrio"
+                            )
+                        except:
+                            gdf = gpd.read_file(fgb_path, bbox=bbox)
                     else:
-                        gdf = gpd.read_file(fgb_path, engine="pyogrio")
+                        try:
+                            gdf = gpd.read_file(fgb_path, engine="pyogrio")
+                        except:
+                            gdf = gpd.read_file(fgb_path)
                     
                     logger.info(
                         f"  ✅ {nombre_capa} desde FlatGeobuf "
@@ -224,13 +281,14 @@ class DataSourceManager:
                 "viaspocuarias": "biodiversidad:VP_ViasPecuarias",
                 "espaciosnaturales": "biodiversidad:EspaciosNaturalesProtegidos",
                 "masasagua": "hidrologia:MasasAgua",
-                "zonasinundables": "hidrologia:ZonasInundables"
+                "zonasinundables": "hidrologia:ZonasInundables",
+                "montes": "biodiversidad:MontesPublicos"
             }
             
             tabla = tabla_map.get(nombre_capa.lower())
             if not tabla:
-                logger.debug(f"  ❌ {nombre_capa} no mapeado en PostGIS")
-                return None
+                # Intento directo si el nombre coincide con la tabla
+                tabla = nombre_capa
             
             # Construir query con filtro espacial si hay bbox
             if bbox:
@@ -238,19 +296,14 @@ class DataSourceManager:
                 # Crear geometría del bbox en EPSG:4326
                 bbox_wkt = f"POLYGON(({minx} {miny},{maxx} {miny},{maxx} {maxy},{minx} {maxy},{minx} {miny}))"
                 
+                # Intentamos detectar el esquema public o biodiversidad
                 query = f"""
                     SELECT *
-                    FROM public."{tabla}"
-                    WHERE ST_Intersects(
-                        geom,
-                        ST_Transform(
-                            ST_GeomFromText('{bbox_wkt}', 4326),
-                            ST_SRID(geom)
-                        )
-                    )
+                    FROM "{tabla}"
+                    WHERE geom && ST_Transform(ST_GeomFromText('{bbox_wkt}', 4326), 25830)
                 """
             else:
-                query = f'SELECT * FROM public."{tabla}"'
+                query = f'SELECT * FROM "{tabla}"'
             
             # Leer con PostGIS
             with self.postgis.get_connection() as conn:
@@ -267,7 +320,7 @@ class DataSourceManager:
             return gdf
             
         except Exception as e:
-            logger.warning(f"  ⚠️  Error leyendo desde PostGIS: {e}")
+            logger.warning(f"  ⚠️  Error leyendo {nombre_capa} desde PostGIS: {e}")
             return None
     
     def _obtener_desde_gpkg(
@@ -335,6 +388,7 @@ class DataSourceManager:
         capas = {
             "fgb": [],
             "gpkg": [],
+            "shp": [],
             "postgis": []
         }
         
@@ -349,6 +403,12 @@ class DataSourceManager:
             capas["gpkg"] = [
                 f.stem for f in self.gpkg_dir.glob("*.gpkg")
             ]
+            
+        # Shapefile
+        if self.shp_dir.exists():
+            capas["shp"] = [
+                f.stem for f in self.shp_dir.glob("*.shp")
+            ]
         
         # PostGIS
         if self.postgis_available:
@@ -356,7 +416,7 @@ class DataSourceManager:
                 # Aquí podrías consultar las tablas disponibles
                 capas["postgis"] = [
                     "rednatura", "viaspocuarias", "espaciosnaturales",
-                    "masasagua", "zonasinundables"
+                    "masasagua", "zonasinundables", "montes"
                 ]
             except:
                 pass
