@@ -179,7 +179,7 @@ class GISViewer {
      * Cargar capa individual con FlatGeobuf (Código Maestro)
      */
     async cargarCapaIndividual(nombre, url) {
-        console.log(`� Descargando binario FGB: ${nombre}`);
+        console.log(`🔄 Descargando binario FGB: ${nombre}`);
         
         try {
             const response = await fetch(url);
@@ -251,18 +251,21 @@ class GISViewer {
     async cargarReferencia(ref) {
         if (!ref) {
             this.showNotification('Por favor, introduce una referencia catastral', 'warning');
-            return;
+            return null;
         }
         
         try {
-            const response = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
+            const response = await fetch(`/api/v1/catastro/geometria/${encodeURIComponent(ref)}?formatos=geojson`);
             if (!response.ok) {
                 throw new Error('Referencia no encontrada');
             }
             
-            const geojson = await response.json();
+            const data = await response.json();
+            const geojson = data.geojson;
             
-            L.geoJSON(geojson, {
+            if (!geojson) throw new Error('No se recibió geometría GeoJSON');
+
+            const layer = L.geoJSON(geojson, {
                 style: {
                     color: '#e74c3c',
                     weight: 3,
@@ -271,14 +274,16 @@ class GISViewer {
             }).addTo(this.map);
             
             // Centrar mapa en la referencia
-            const bounds = L.geoJSON(geojson).getBounds();
+            const bounds = layer.getBounds();
             this.map.fitBounds(bounds);
             
             this.showNotification(`✅ Referencia ${ref} cargada`, 'success');
+            return data;
             
         } catch (error) {
             console.error('Error cargando referencia:', error);
             this.showNotification('Error cargando referencia', 'error');
+            return null;
         }
     }
 
@@ -330,17 +335,3 @@ class GISViewer {
     }
 }
 
-// Inicialización segura
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Iniciando GIS Viewer v3.0...');
-    
-    try {
-        // Crear instancia global del visor
-        window.gisViewer = new GISViewer('map');
-        await window.gisViewer.init();
-        
-        console.log('✅ GIS Viewer v3.0 listo');
-    } catch (error) {
-        console.error('❌ Error inicializando GIS Viewer:', error);
-    }
-});

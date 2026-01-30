@@ -265,140 +265,9 @@
     }
   </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
+  <script src="https://unpkg.com/flatgeobuf@3.27.2/dist/flatgeobuf-geojson.min.js"></script>
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-  <script>
-    // Variable global para el mapa
-    let map;
-    let drawnItems;
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Inicializar el mapa con seguridad
-        map = L.map('map').setView([40.4167, -3.7033], 6);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        // 2. Configurar herramientas de dibujo
-        drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
-
-        const drawControl = new L.Control.Draw({
-            edit: { featureGroup: drawnItems },
-            draw: { polygon: true, polyline: false, rectangle: true, circle: false, marker: false }
-        });
-        map.addControl(drawControl);
-
-        // SOLUCIÓN AL ERROR 'ON' de null: El evento se asigna DESPUÉS de crear el mapa
-        map.on(L.Draw.Event.CREATED, function (e) {
-            drawnItems.clearLayers(); // Limpiar dibujos previos
-            const layer = e.layer;
-            drawnItems.addLayer(layer);
-            
-            // Aquí llamaríamos a la función de análisis que vimos antes
-            const geometria = layer.toGeoJSON().geometry;
-            console.log("Geometría lista para analizar:", geometria);
-        });
-
-        console.log("✅ Mapa y controles de dibujo listos");
-        
-        // Cargar la lista de capas automáticamente
-        await cargarListaCapas();
-    });
-
-    // 2. SOLUCIÓN AL ERROR 'Unexpected token g' (Lectura binaria de FGB)
-    async function cargarCapaIndividual(nombre, url) {
-        console.log(`🔄 Descargando binario FGB: ${nombre}`);
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Error en la descarga");
-
-            // IMPORTANTE: flatgeobuf.deserialize espera el body de la respuesta
-            const iter = flatgeobuf.deserialize(response.body);
-            
-            const fgLayer = L.geoJSON(null, {
-                style: { color: '#3b82f6', weight: 2, fillOpacity: 0.3 },
-                onEachFeature: (feature, layer) => {
-                    layer.bindPopup(`<b>Capa:</b> ${nombre}`);
-                }
-            }).addTo(map);
-
-            // Leemos el stream binario
-            for await (let feature of iter) {
-                fgLayer.addData(feature);
-            }
-            
-            console.log(`✅ Capa ${nombre} renderizada con éxito`);
-            map.fitBounds(fgLayer.getBounds());
-
-        } catch (error) {
-            console.error("❌ Fallo crítico cargando FGB:", error);
-            alert("El archivo no es un JSON válido, pero el cargador binario también falló. Revisa la consola.");
-        }
-    }
-
-    async function cargarListaCapas() {
-        const res = await fetch('/api/v1/capas/fgb');
-        const data = await res.json();
-        const container = document.getElementById('capasList'); // Asegúrate de que este ID existe
-        
-        if (data.capas) {
-            data.capas.forEach(capa => {
-                const btn = document.createElement('button');
-                btn.className = "btn-capa";
-                btn.innerHTML = `<span>📁</span> ${capa.nombre}`;
-                btn.onclick = () => cargarCapaIndividual(capa.nombre, capa.url);
-                container.appendChild(btn);
-            });
-        }
-    }
-
-    async function cargarReferencia() {
-      const ref = document.getElementById('refInput').value.trim();
-      if (!ref) {
-        alert('Por favor, introduce una referencia catastral');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
-        if (!response.ok) {
-          alert('Referencia no encontrada');
-          return;
-        }
-        
-        const geojson = await response.json();
-        
-        L.geoJSON(geojson, {
-          style: {
-            color: '#e74c3c',
-            weight: 3,
-            fillOpacity: 0.3
-          }
-        }).addTo(map);
-        
-        // Centrar mapa en la referencia
-        const bounds = L.geoJSON(geojson).getBounds();
-        map.fitBounds(bounds);
-        
-      } catch (error) {
-        console.error('Error cargando referencia:', error);
-        alert('Error cargando referencia');
-      }
-    }
-
-    async function cargarCapas() {
-      // Esta función ahora carga las capas locales
-      await cargarListaCapas();
-    }
-
-    // Funciones adicionales para compatibilidad con el HTML existente
-    function cargarReferenciaCatastral() {
-      cargarReferencia();
-    }
-  </script>
+  <script src="/static/js/viewer.js"></script>
 </head>
 
 <body>
@@ -557,6 +426,7 @@
 
   <script>
     // Variables globales
+    let gisViewer = null;
     let map = null;
     let layersGroup = null;
     let measurementLayer = null;
@@ -578,10 +448,17 @@
     };
 
     // Inicialización
-    document.addEventListener('DOMContentLoaded', () => {
-      initMap();
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Usar la clase GISViewer para inicializar el mapa y controles
+      gisViewer = new GISViewer('map');
+      await gisViewer.init();
+      map = gisViewer.map;
+
+      agregarCapasWMS();
       setupFileUpload();
       switchInternalTab('referencia');
+
+      console.log('✅ Visor Premium inicializado con GISViewer');
     });
 
     // Funciones de tabs
@@ -608,19 +485,9 @@
       }
     }
 
-    // Inicializar mapa
-    function initMap() {
-      if (map) return;
-
-      map = L.map('map').setView([40.0, -3.7], 6);
-      layersGroup = L.layerGroup().addTo(map);
-      measurementLayer = L.layerGroup().addTo(map);
-
-      // Capa base OSM
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19
-      }).addTo(map);
+    // Capas adicionales (WMS)
+    function agregarCapasWMS() {
+      if (!map) return;
 
       // Catastro WMS
       layers.catastro = L.tileLayer.wms(
@@ -634,45 +501,11 @@
         { layers: 'OI.OrthoimageCoverage', format: 'image/png', transparent: true, opacity: 0.7 }
       );
 
+      measurementLayer = L.layerGroup().addTo(map);
+
       // Event listeners para mediciones
       map.on('click', handleMapClick);
       map.on('dblclick', handleMapDblClick);
-
-      // Añadir controles de dibujo
-      const drawnItems = new L.FeatureGroup();
-      map.addLayer(drawnItems);
-
-      const drawControl = new L.Control.Draw({
-        draw: {
-          polygon: {
-            allowIntersection: false,
-            drawError: {
-              color: '#e1e100',
-              message: '<strong>Error:</strong> ¡Las formas no pueden intersectarse!'
-            },
-            shapeOptions: {
-              color: '#3388ff',
-              weight: 3,
-              opacity: 0.8,
-              fill: true,
-              fillColor: '#3388ff',
-              fillOpacity: 0.2
-            }
-          },
-          polyline: false,
-          circle: false,
-          rectangle: false,
-          marker: false,
-          circlemarker: false
-        },
-        edit: {
-          featureGroup: drawnItems,
-          remove: true
-        }
-      });
-      map.addControl(drawControl);
-
-      console.log('✅ Mapa inicializado con controles de dibujo');
     }
 
     // Cargar referencia catastral
@@ -686,69 +519,31 @@
       try {
         console.log(`🔍 Cargando referencia: ${ref}`);
 
-        // Usar la API del backend
-        const coordsResponse = await fetch(`/api/v1/referencia/${encodeURIComponent(ref)}/geojson`);
-        if (!coordsResponse.ok) {
-          alert(`❌ Referencia no encontrada: ${ref}`);
-          return;
-        }
+        // Usar la clase gisViewer para cargar la referencia
+        const data = await gisViewer.cargarReferencia(ref);
 
-        const coordsData = await coordsResponse.json();
-        console.log('📍 Coordenadas obtenidas:', coordsData);
-
-        // Remover parcela anterior si existe
-        if (layers.parcela) {
-          map.removeLayer(layers.parcela);
-          layers.parcela = null;
-        }
-
-        // Crear capa de parcela
-        if (coordsData && coordsData.type === 'FeatureCollection' && Array.isArray(coordsData.features) && coordsData.features.length > 0) {
-          const feat = coordsData.features[0];
-          if (feat.geometry && (feat.geometry.type === 'Polygon' || feat.geometry.type === 'MultiPolygon')) {
-            const parcelaLayer = L.geoJSON(feat, {
-              style: { color: '#ef4444', weight: 3, fillOpacity: 0.06 }
-            }).addTo(map);
-            layers.parcela = parcelaLayer;
-
-            // Ajustar vista
-            if (parcelaLayer.getBounds) map.fitBounds(parcelaLayer.getBounds());
-
-            // Calcular área
-            let areaText = '';
-            try {
-              const area = L.GeometryUtil.geodesicArea(feat.geometry.coordinates[0].map(c => L.latLng(c[1], c[0])));
-              if (area) {
-                areaText = formatArea(area);
-                const measEl = document.getElementById('measurement-result');
-                if (measEl) {
-                  measEl.textContent = `📐 Área: ${areaText}`;
-                  measEl.classList.add('active');
-                }
-              }
-            } catch (err) { console.warn(err); }
-
-            alert(`✅ Parcela cargada: ${ref}${areaText ? '\n' + areaText : ''}`);
-            updateRefDatos(ref, coordsData);
-
-          } else if (feat.geometry && feat.geometry.type === 'Point') {
-            const [lon, lat] = feat.geometry.coordinates;
-            const marker = L.marker([lat, lon], { title: `Referencia: ${ref}` }).addTo(map);
-            const circle = L.circle([lat, lon], { color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: 50 }).addTo(map);
-            const parcelaLayer = L.layerGroup([marker, circle]);
-            layers.parcela = parcelaLayer;
-            map.setView([lat, lon], 18);
-            alert(`✅ Referencia catastral cargada:\n${ref}\n\nCoordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
-            updateRefDatos(ref, coordsData);
+        if (data && data.geojson) {
+          // Remover parcela anterior si existe
+          if (layers.parcela) {
+            map.removeLayer(layers.parcela);
           }
+
+          // Encontrar la capa de GeoJSON que gisViewer acaba de añadir
+          // (Aunque gisViewer ya la añade al mapa, aquí la guardamos para control local)
+          map.eachLayer(l => {
+              if (l instanceof L.GeoJSON && l.options.style.color === '#e74c3c') {
+                  layers.parcela = l;
+              }
+          });
+
+          updateRefDatos(ref, data);
 
           // Actualizar estado
           if (!state.referencias.includes(ref)) {
             state.referencias.push(ref);
           }
-
         } else {
-          alert(`❌ Formato de coordenadas inválido para referencia: ${ref}`);
+          alert(`❌ No se pudo cargar la referencia: ${ref}`);
         }
 
       } catch (e) {
@@ -760,10 +555,13 @@
     // Actualizar datos de referencia
     function updateRefDatos(ref, data) {
       const refDatos = document.getElementById('refDatos');
-      let html = `<strong>Referencia:</strong> ${ref}<br><br>`;
+      let html = `<strong>Referencia:</strong> ${ref}<br>`;
+      html += `<strong>Área:</strong> ${data.area_ha} ha (${data.area_m2} m²)<br>`;
+      html += `<strong>Vértices:</strong> ${data.num_vertices}<br><br>`;
       
-      if (data.features && data.features[0] && data.features[0].properties) {
-        const props = data.features[0].properties;
+      const geojson = data.geojson;
+      if (geojson.features && geojson.features[0] && geojson.features[0].properties) {
+        const props = geojson.features[0].properties;
         Object.entries(props).forEach(([key, value]) => {
           html += `<strong>${key}:</strong> ${value}<br>`;
         });
@@ -1124,26 +922,21 @@
       resultDiv.innerHTML = '⏳ Analizando urbanismo...';
       
       try {
-        const res = await fetch('/api/v1/analizar-urbanismo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referencia: ref })
-        });
+        const res = await fetch(`/api/v1/catastro/urbanismo/${encodeURIComponent(ref)}`);
         
         const data = await res.json();
-        if (data.status === 'success') {
-          const u = data.data.analisis_urbanistico;
+        if (data.referencia) {
           resultDiv.innerHTML = `
             <div style="background: #e8f5e9; padding: 8px; border-radius: 4px; color: #333; font-size:11px;">
               <strong>✅ Análisis completado</strong><br>
-              <strong>Suelo:</strong> ${u.suelo}<br>
-              <strong>Edificabilidad:</strong> ${u.edificabilidad}<br>
-              <strong>Superficie:</strong> ${u.superficie_parcela}<br>
-              <strong>Ocupación:</strong> ${u.ocupacion_estimada}
+              <strong>Clasificación:</strong> ${data.clasificacion_suelo}<br>
+              <strong>Uso:</strong> ${data.uso_predominante}<br>
+              <strong>Protección:</strong> ${data.proteccion}<br>
+              <small>${data.observaciones}</small>
             </div>
           `;
         } else {
-          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.message}</div>`;
+          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.error || 'No se pudieron obtener datos'}</div>`;
         }
       } catch (e) {
         resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error de conexión: ${e.message}</div>`;
@@ -1199,24 +992,28 @@
       resultDiv.innerHTML = '⏳ Analizando afecciones...';
       
       try {
-        const res = await fetch('/api/v1/analizar-afecciones', {
+        const res = await fetch('/api/v1/analisis/afecciones', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referencia: ref })
+          body: JSON.stringify({ referencia_catastral: ref })
         });
         
         const data = await res.json();
-        if (data.status === 'success') {
-          let html = '<div style="background: #ffebee; padding: 8px; border-radius: 4px; color: #333; font-size:11px;"><strong>✅ Análisis completado</strong><br>';
-          data.data.afecciones.forEach(a => {
-            html += `<div style="margin-top: 4px; padding: 3px; background: rgba(255,255,255,0.7); border-radius: 3px; font-size:10px;">
-              <strong>⚠️ ${a.tipo}:</strong> ${a.afectacion} (${a.porcentaje?.toFixed(2)}%)
-            </div>`;
-          });
+        if (data.tiene_afecciones !== undefined) {
+          let html = `<div style="background: #ffebee; padding: 8px; border-radius: 4px; color: #333; font-size:11px;"><strong>✅ Análisis completado (${data.nivel_afeccion_global})</strong><br>`;
+          if (data.afecciones && data.afecciones.length > 0) {
+            data.afecciones.forEach(a => {
+              html += `<div style="margin-top: 4px; padding: 3px; background: rgba(255,255,255,0.7); border-radius: 3px; font-size:10px;">
+                <strong>⚠️ ${a.nombre}:</strong> ${a.area_afectada_m2} m² (${a.porcentaje_afectado}%)
+              </div>`;
+            });
+          } else {
+            html += '<div>No se encontraron afecciones significativas.</div>';
+          }
           html += '</div>';
           resultDiv.innerHTML = html;
         } else {
-          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.message}</div>`;
+          resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error: ${data.error || 'Respuesta inesperada'}</div>`;
         }
       } catch (e) {
         resultDiv.innerHTML = `<div style="color: #e74c3c; font-size:11px;">❌ Error de conexión: ${e.message}</div>`;
@@ -1382,44 +1179,27 @@
         const url = checkbox.dataset.url;
         
         try {
-          console.log(`🔄 Cargando capa: ${nombre} desde ${url}`);
+          console.log(`🔄 Cargando capa FGB: ${nombre} desde ${url}`);
           
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-          }
+          // Usar el método robusto de gisViewer para FGB
+          await gisViewer.cargarCapaIndividual(nombre, url);
           
-          const geojson = await response.json();
+          // Obtener la capa recién añadida (es la última en layers del mapa o gestionarla mejor)
+          // Para simplificar la UI de control de capas en visor.html,
+          // podríamos registrarla en state.capasCargadas
           
-          // Crear capa con estilo aleatorio
-          const colores = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#48dbfb'];
-          const color = colores[state.capasCargadas.size % colores.length];
-          
-          const layer = L.geoJSON(geojson, {
-            style: {
+          // Buscamos la capa en el mapa (un poco hacky pero funciona para esta UI)
+          let lastLayer = null;
+          map.eachLayer(l => { if(l instanceof L.GeoJSON) lastLayer = l; });
+
+          if (lastLayer) {
+            const color = lastLayer.options.style.color;
+            state.capasCargadas.set(nombre, {
+              layer: lastLayer,
               color: color,
-              weight: 2,
-              fillOpacity: 0.3,
-              fillColor: color
-            },
-            onEachFeature: function(feature, layer) {
-              if (feature.properties) {
-                const popupContent = Object.entries(feature.properties)
-                  .slice(0, 5) // Limitar a 5 propiedades
-                  .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-                  .join('<br>');
-                layer.bindPopup(`<strong>${nombre}</strong><br><br>${popupContent}`);
-              }
-            }
-          });
-          
-          // Añadir al mapa y guardar referencia
-          layer.addTo(map);
-          state.capasCargadas.set(nombre, {
-            layer: layer,
-            color: color,
-            url: url
-          });
+              url: url
+            });
+          }
           
           cargadas++;
           
@@ -1432,18 +1212,7 @@
       // Actualizar UI
       actualizarListaCapasCargadas();
       
-      // Ajustar vista a las capas cargadas
-      if (state.capasCargadas.size > 0) {
-        const group = new L.featureGroup(Array.from(state.capasCargadas.values()).map(item => item.layer));
-        map.fitBounds(group.getBounds().pad(0.1));
-      }
-      
-      // Mostrar resultado
-      const mensaje = cargadas > 0 
-        ? `✅ ${cargadas} capa(s) cargada(s)${errores > 0 ? ` (${errores} con errores)` : ''}`
-        : `❌ No se pudieron cargar las capas`;
-      
-      alert(mensaje);
+      // Mostrar resultado (gisViewer ya muestra notificaciones)
       
       // Limpiar selección
       checkboxes.forEach(cb => cb.checked = false);

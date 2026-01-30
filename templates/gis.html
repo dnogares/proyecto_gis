@@ -203,11 +203,12 @@
     <script>
         let gisViewer;
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Iniciando Visor GIS...');
 
             // Inicializar visor
             gisViewer = new GISViewer('map');
+            await gisViewer.init();
 
             console.log('✅ Visor GIS cargado');
         });

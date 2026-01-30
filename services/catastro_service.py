@@ -686,8 +686,10 @@ class CatastroCompleteService:
                             }
             except Exception as e:
                 logger.warning(f"Error parsing coordenadas response: {e}")
+        except Exception as e:
+            logger.error(f"Error getting coordenadas: {e}")
 
-            return {}
+        return {}
     
     def _obtener_datos_catastro(self, ref: str) -> Dict:
         """Obtiene datos desde Catastro"""
@@ -712,6 +714,9 @@ class CatastroCompleteService:
             except Exception as e:
                 logger.warning(f"Error parsing datos_catastro response: {e}")
                 return {}
+        except Exception as e:
+            logger.error(f"Error getting datos catastro: {e}")
+            return {}
     
     def _descargar_gml(self, ref: str) -> Optional[Path]:
         """Descarga archivo GML de la parcela"""
@@ -741,6 +746,9 @@ class CatastroCompleteService:
             except Exception as e:
                 logger.error(f"Error saving GML to disk: {e}")
                 return None
+        except Exception as e:
+            logger.error(f"Error downloading GML: {e}")
+            return None
     
     def _extraer_vertices(self, geom) -> List[Dict]:
         """Extrae vértices de una geometría"""

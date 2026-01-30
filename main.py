@@ -191,12 +191,43 @@ async def listar_todas_capas():
 
 @app.post("/api/v1/analisis/afecciones")
 async def analizar_afecciones(request: Request):
+    """
+    Analiza afecciones para una parcela (por WKT o referencia catastral)
+    """
     if not analizador_afecciones:
         raise HTTPException(503, "Analizador no disponible")
+
     data = await request.json()
+    geometria_wkt = data.get("geometria_wkt")
+    referencia = data.get("referencia_catastral")
+
+    # Si no hay geometría pero hay referencia, intentar obtenerla de Catastro
+    if not geometria_wkt and referencia:
+        try:
+            if not catastro_service:
+                raise HTTPException(503, "Servicio de Catastro no disponible")
+
+            geom_data = catastro_service.obtener_geometria(referencia, ["geojson"])
+            geojson = geom_data.get("geojson")
+
+            if geojson and "features" in geojson and len(geojson["features"]) > 0:
+                from shapely.geometry import shape
+                geom_obj = shape(geojson["features"][0]["geometry"])
+                geometria_wkt = geom_obj.wkt
+            else:
+                raise HTTPException(404, f"No se encontró geometría para la referencia {referencia}")
+        except Exception as e:
+            logger.error(f"Error obteniendo geometría para análisis: {e}")
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(400, f"Error al procesar la referencia {referencia}: {str(e)}")
+
+    if not geometria_wkt:
+        raise HTTPException(400, "Se requiere geometría WKT o referencia catastral válida")
+
     resultado = analizador_afecciones.analizar_parcela(
-        geometria_parcela=data.get("geometria_wkt"),
-        referencia_catastral=data.get("referencia_catastral")
+        geometria_parcela=geometria_wkt,
+        referencia_catastral=referencia
     )
     return resultado
 
@@ -216,6 +247,12 @@ async def obtener_geometria_catastro(referencia: str, formatos: str = "geojson,k
         raise HTTPException(503, "Servicio no disponible")
     lista_formatos = [f.strip() for f in formatos.split(',')]
     return catastro_service.obtener_geometria(referencia, lista_formatos)
+
+@app.get("/api/v1/catastro/urbanismo/{referencia}")
+async def consultar_urbanismo_catastro(referencia: str):
+    if not catastro_service:
+        raise HTTPException(503, "Servicio no disponible")
+    return catastro_service.consultar_urbanismo(referencia)
 
 @app.post("/api/v1/catastro/procesar-lote")
 async def procesar_lote_catastro(request: Request):
