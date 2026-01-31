@@ -1,0 +1,315 @@
+{
+  "nombre_aplicacion": "Generador de Informes Urbanísticos",
+  "version": "1.0.0",
+  "descripcion": "Sistema de generación automática de informes urbanísticos",
+  
+  "urls_servicios": {
+    "catastro_ovc": "https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/",
+    "catastro_inspire_wfs": "https://inspire.catastro.es/inspire/wfs",
+    "catastro_inspire_wms": "https://inspire.catastro.es/inspire/wms",
+    "siu_arcgis": "https://services.arcgis.com/YWQjeT7gO1z78YVu/arcgis/rest/services/",
+    "mapama_biodiversidad": "https://wms.mapama.gob.es/sig/Biodiversidad/",
+    "mapama_cauces": "https://sig.mapama.gob.es/redes-seguimiento/visor.html",
+    "miteco_espacios_protegidos": "https://www.miteco.gob.es/es/biodiversidad/servicios/banco-datos-naturaleza/",
+    "ide_andalucia": "https://www.ideandalucia.es/services/",
+    "pnoa_ign": "https://www.ign.es/wms-inspire/pnoa-ma"
+  },
+  
+  "parametros_conexion": {
+    "timeout_segundos": 30,
+    "max_reintentos": 3,
+    "delay_reintento": 2,
+    "user_agent": "InformeUrbanistico/1.0",
+    "verify_ssl": true
+  },
+  
+  "cache": {
+    "habilitado": true,
+    "directorio": "cache/urbanismo",
+    "ttl_segundos": 86400,
+    "max_tamano_mb": 500,
+    "limpiar_automatico": true
+  },
+  
+  "formatos_salida": {
+    "pdf": {
+      "habilitado": true,
+      "plantilla": "plantillas/informe_urbanistico.html",
+      "tamaño_pagina": "A4",
+      "orientacion": "portrait",
+      "margenes_mm": {
+        "superior": 20,
+        "inferior": 20,
+        "izquierdo": 20,
+        "derecho": 20
+      },
+      "incluir_portada": true,
+      "incluir_indice": true,
+      "incluir_cartografia": true
+    },
+    "json": {
+      "habilitado": true,
+      "formato_legible": true,
+      "codificacion": "utf-8"
+    },
+    "kml": {
+      "habilitado": true,
+      "incluir_estilos": true,
+      "icono_parcela": "http://maps.google.com/mapfiles/kml/paddle/red-circle.png"
+    },
+    "excel": {
+      "habilitado": false,
+      "incluir_graficos": true
+    }
+  },
+  
+  "consultas_afecciones": {
+    "costas": {
+      "habilitado": true,
+      "buffer_metros": 500,
+      "consultar_dpmt": true,
+      "consultar_servidumbres": true
+    },
+    "carreteras": {
+      "habilitado": true,
+      "buffer_metros": 1000,
+      "incluir_autopistas": true,
+      "incluir_autovias": true,
+      "incluir_nacionales": true,
+      "incluir_autonomicas": true,
+      "incluir_locales": false
+    },
+    "ferrocarriles": {
+      "habilitado": true,
+      "buffer_metros": 500,
+      "incluir_alta_velocidad": true,
+      "incluir_convencional": true
+    },
+    "cauces": {
+      "habilitado": true,
+      "buffer_metros": 100,
+      "consultar_zona_policia": true,
+      "consultar_dominio_publico": true
+    },
+    "zonas_inundables": {
+      "habilitado": true,
+      "periodos_retorno": [10, 50, 100, 500],
+      "usar_snczi": true
+    },
+    "espacios_protegidos": {
+      "habilitado": true,
+      "red_natura_2000": true,
+      "parques_nacionales": true,
+      "parques_naturales": true,
+      "reservas_naturales": true,
+      "monumentos_naturales": true,
+      "paisajes_protegidos": true
+    },
+    "montes_publicos": {
+      "habilitado": true,
+      "buffer_metros": 100,
+      "solo_utilidad_publica": false
+    },
+    "patrimonio": {
+      "habilitado": true,
+      "buffer_metros": 200,
+      "bic": true,
+      "catalogo_general": true,
+      "inventario": true
+    },
+    "infraestructuras": {
+      "habilitado": true,
+      "lineas_electricas": {
+        "tension_minima_kv": 66,
+        "buffer_metros": 50
+      },
+      "gaseoductos": {
+        "buffer_metros": 100
+      },
+      "telecomunicaciones": {
+        "buffer_metros": 50
+      }
+    },
+    "servidumbres": {
+      "aeronauticas": true,
+      "militares": true,
+      "radioelectricas": true
+    }
+  },
+  
+  "clasificacion_suelo": {
+    "tipos": [
+      "Suelo Urbano Consolidado",
+      "Suelo Urbano No Consolidado",
+      "Suelo Urbanizable Sectorizado",
+      "Suelo Urbanizable No Sectorizado",
+      "Suelo No Urbanizable Común",
+      "Suelo No Urbanizable Protegido"
+    ]
+  },
+  
+  "calificaciones_tipo": {
+    "residencial": ["R-1", "R-2", "R-3", "R-4"],
+    "terciario": ["T-1", "T-2", "TC"],
+    "industrial": ["I-1", "I-2", "I-3"],
+    "equipamiento": ["EQ-1", "EQ-2", "EQ-3"],
+    "espacios_libres": ["EL-1", "EL-2"],
+    "infraestructuras": ["INF"]
+  },
+  
+  "parametros_edificatorios_defecto": {
+    "edificabilidad_min": 0.0,
+    "edificabilidad_max": 3.0,
+    "altura_min_metros": 0.0,
+    "altura_max_metros": 50.0,
+    "ocupacion_min_porcentaje": 0,
+    "ocupacion_max_porcentaje": 100,
+    "retranqueo_min_metros": 0.0,
+    "retranqueo_max_metros": 10.0
+  },
+  
+  "cartografia": {
+    "sistemas_coordenadas": {
+      "entrada": "EPSG:4326",
+      "salida": "EPSG:4326",
+      "alternativas": ["EPSG:25830", "EPSG:3857"]
+    },
+    "capas_base": {
+      "osm": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "pnoa": "https://www.ign.es/wms-inspire/pnoa-ma",
+      "catastro": "https://inspire.catastro.es/inspire/wms"
+    },
+    "resolucion_imagenes": {
+      "baja": 72,
+      "media": 150,
+      "alta": 300
+    },
+    "escala_planos": [
+      1000,
+      2000,
+      5000,
+      10000
+    ]
+  },
+  
+  "informes": {
+    "tipos_disponibles": [
+      {
+        "id": "basico",
+        "nombre": "Informe Básico",
+        "descripcion": "Clasificación y calificación urbanística básica",
+        "precio": 0,
+        "tiempo_estimado_minutos": 2,
+        "incluye": [
+          "datos_catastrales",
+          "clasificacion_suelo",
+          "calificacion_basica",
+          "usos_principales"
+        ]
+      },
+      {
+        "id": "completo",
+        "nombre": "Informe Completo",
+        "descripcion": "Informe exhaustivo con afecciones y cartografía",
+        "precio": 0,
+        "tiempo_estimado_minutos": 5,
+        "incluye": [
+          "datos_catastrales",
+          "clasificacion_suelo",
+          "calificacion_completa",
+          "parametros_edificatorios",
+          "afecciones_todas",
+          "gestion_urbanistica",
+          "cartografia_completa"
+        ]
+      },
+      {
+        "id": "viabilidad",
+        "nombre": "Informe de Viabilidad",
+        "descripcion": "Análisis para viabilidad de proyecto específico",
+        "precio": 0,
+        "tiempo_estimado_minutos": 10,
+        "incluye": [
+          "completo",
+          "analisis_normativa",
+          "restricciones",
+          "recomendaciones"
+        ]
+      },
+      {
+        "id": "cedula",
+        "nombre": "Cédula Urbanística",
+        "descripcion": "Documento oficial certificado",
+        "precio": 0,
+        "tiempo_estimado_minutos": 3,
+        "incluye": [
+          "datos_catastrales",
+          "clasificacion_suelo",
+          "calificacion_completa",
+          "certificacion_oficial"
+        ]
+      }
+    ]
+  },
+  
+  "notificaciones": {
+    "email": {
+      "habilitado": false,
+      "smtp_server": "",
+      "smtp_port": 587,
+      "smtp_user": "",
+      "smtp_password": "",
+      "from_address": "informes@urbanismo.local",
+      "plantilla_asunto": "Informe Urbanístico - {referencia_catastral}",
+      "plantilla_cuerpo": "plantillas/email_informe.html"
+    },
+    "webhook": {
+      "habilitado": false,
+      "url": "",
+      "metodo": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  
+  "logs": {
+    "nivel": "INFO",
+    "formato": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "archivo": "logs/urbanismo.log",
+    "rotacion": {
+      "max_bytes": 10485760,
+      "backup_count": 5
+    },
+    "consola": true
+  },
+  
+  "desarrollo": {
+    "modo_debug": false,
+    "datos_prueba": {
+      "usar_datos_ficticios": false,
+      "referencias_test": [
+        "1234567VK1234N0001AB",
+        "9876543ZZ9876Z0001CD"
+      ]
+    },
+    "mock_servicios": {
+      "habilitado": false,
+      "directorio": "tests/mocks"
+    }
+  },
+  
+  "limites": {
+    "consultas_simultaneas": 5,
+    "max_parcelas_lote": 50,
+    "timeout_total_segundos": 300,
+    "tamaño_max_pdf_mb": 50
+  },
+  
+  "legal": {
+    "aviso_legal": "Los informes generados tienen carácter informativo. Para trámites oficiales se requiere certificación municipal.",
+    "texto_disclaimer": "La información se obtiene de fuentes públicas y puede no estar actualizada en tiempo real.",
+    "validez_informes_dias": 90,
+    "requerir_aceptacion_terminos": true
+  }
+}

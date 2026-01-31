@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informes Urbanísticos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+        }
+        .container {
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Generador de Informes Urbanísticos</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Solicitar Informe</h2>
+                <form id="informe-form">
+                    <div class="mb-3">
+                        <label for="ref-catastral" class="form-label">Referencia Catastral</label>
+                        <input type="text" class="form-control" id="ref-catastral" placeholder="E.g., 002500100VK37E0001WE">
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">o Dirección</label>
+                        <input type="text" class="form-control" id="direccion" placeholder="E.g., Calle del Sol, 1, 28013, Madrid">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipo-informe" class="form-label">Tipo de Informe</label>
+                        <select class="form-select" id="tipo-informe">
+                            <option value="basico">Básico</option>
+                            <option value="completo">Completo</option>
+                            <option value="viabilidad">Estudio de Viabilidad</option>
+                            <option value="cedula">Cédula Urbanística</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generar Informe</button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <h2>Resultado</h2>
+                <div id="resultado">
+                    <p>Aquí se mostrará el resultado del informe.</p>
+                </div>
+                <div id="progreso" class="progress mt-3" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById("informe-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const progreso = document.getElementById("progreso");
+            const progressBar = progreso.querySelector(".progress-bar");
+            progreso.style.display = "block";
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 10;
+                progressBar.style.width = width + "%";
+                if (width >= 100) {
+                    clearInterval(interval);
+                    document.getElementById("resultado").innerHTML = `<p>Informe generado correctamente. <a href="#">Descargar PDF</a></p>`;
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
